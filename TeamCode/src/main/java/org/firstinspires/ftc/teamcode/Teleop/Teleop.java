@@ -1,63 +1,19 @@
 package org.firstinspires.ftc.teamcode.Teleop;
 
-import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
-import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
-import com.qualcomm.robotcore.hardware.IMU;
-import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
-import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.teamcode.Initialize;
 
 @TeleOp(name="TeleOp")
 public class Teleop extends LinearOpMode {
-    DcMotor FL, FR, BL, BR;
-    Servo LA, RA;
-    IMU imu;
-
+    // Import Initialize
+    Initialize init = new Initialize();
     // Variables
     ElapsedTime timer = new ElapsedTime();
     double angle, setpoint, output, error, lasterror = 0, intergralsum = 0;
-
-    private void Init(){
-        // Initialize IMU
-        imu = hardwareMap.get(IMU.class, "imu");
-        imu.initialize(new IMU.Parameters(new RevHubOrientationOnRobot(RevHubOrientationOnRobot.LogoFacingDirection.FORWARD, RevHubOrientationOnRobot.UsbFacingDirection.UP)));
-
-        // Initialize Motors
-        FL = hardwareMap.get(DcMotor.class, "Front_Left");
-        FR = hardwareMap.get(DcMotor.class, "Front_Right");
-        BL = hardwareMap.get(DcMotor.class, "Back_Left");
-        BR = hardwareMap.get(DcMotor.class, "Back_Right");
-        // Reverse Motors
-        FR.setDirection(DcMotorSimple.Direction.REVERSE);
-        BR.setDirection(DcMotorSimple.Direction.REVERSE);
-        // setMode Motors
-        FL.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        FR.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        BL.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        BR.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        // SetBehavior Motors
-        FL.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        FR.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        BL.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        BR.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-
-        // Initialize Servos
-        LA = hardwareMap.get(Servo.class, "Left_Arm");
-        RA = hardwareMap.get(Servo.class, "Right_Arm");
-        // Reverse Servo
-        RA.setDirection(Servo.Direction.REVERSE);
-        //Set Servo
-        RA.setPosition(0.35);
-
-        // Ready to Go!
-        telemetry.addLine("Robot Ready to Go!  Press Play.");
-        telemetry.update();
-    }
 
     private boolean Plus_Minus(double input, int check, double range) {
         return check - range < input && input < check + range;
@@ -85,7 +41,7 @@ public class Teleop extends LinearOpMode {
     }
 
     private void Movement(){
-        angle = -imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);
+        angle = -init.imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);
         double x = gamepad1.left_stick_x;
         double y = -gamepad1.left_stick_y;
         double PID = PIDControl(Math.toRadians(setpoint), angle);
@@ -94,15 +50,15 @@ public class Teleop extends LinearOpMode {
         // Denominator for division to get no more than 1
         double d = Math.max(Math.abs(y) + Math.abs(x) + Math.abs(r), 1);
 
-        FL.setPower((y + x + r)/ d);
-        FR.setPower((y - x - r)/ d);
-        BL.setPower((y - x + r)/ d);
-        BR.setPower((y + x - r)/ d);
+        init.FL.setPower((y + x + r)/ d);
+        init.FR.setPower((y - x - r)/ d);
+        init.BL.setPower((y - x + r)/ d);
+        init.BR.setPower((y + x - r)/ d);
     }
 
     @Override
     public void runOpMode() {
-        Init();
+        init.Init(0.35);
         waitForStart();
         if (opModeIsActive()) {
             // Put run blocks here.
