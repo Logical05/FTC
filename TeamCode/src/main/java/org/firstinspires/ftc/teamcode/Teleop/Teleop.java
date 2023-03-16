@@ -1,7 +1,12 @@
 package org.firstinspires.ftc.teamcode.Teleop;
 
+import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.IMU;
+import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
@@ -9,11 +14,32 @@ import org.firstinspires.ftc.teamcode.Initialize;
 
 @TeleOp(name="TeleOp")
 public class Teleop extends LinearOpMode {
+    // Hardware
+    public DcMotor FL, FR, BL, BR;
+    public Servo LA, RA;
+    public IMU imu;
     // Import Initialize
     Initialize init = new Initialize();
     // Variables
     ElapsedTime timer = new ElapsedTime();
     double angle, setpoint, output, error, lasterror = 0, intergralsum = 0;
+
+    private void Init(){
+        // Initialize IMU
+        imu = hardwareMap.get(IMU.class, "imu");
+
+        // Initialize Motors
+        FL = hardwareMap.get(DcMotor.class, "Front_Left");
+        FR = hardwareMap.get(DcMotor.class, "Front_Right");
+        BL = hardwareMap.get(DcMotor.class, "Back_Left");
+        BR = hardwareMap.get(DcMotor.class, "Back_Right");
+
+        // Initialize Servos
+        LA = hardwareMap.get(Servo.class, "Left_Arm");
+        RA = hardwareMap.get(Servo.class, "Right_Arm");
+
+        init.Init(0.35, imu, FL, FR, BL, BR, RA, LA);
+    }
 
     private boolean Plus_Minus(double input, int check, double range) {
         return check - range < input && input < check + range;
@@ -58,7 +84,7 @@ public class Teleop extends LinearOpMode {
 
     @Override
     public void runOpMode() {
-        init.Init(0.35);
+        Init();
         waitForStart();
         if (opModeIsActive()) {
             // Put run blocks here.
