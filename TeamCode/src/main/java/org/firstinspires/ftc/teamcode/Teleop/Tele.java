@@ -9,16 +9,16 @@ import com.qualcomm.robotcore.hardware.Servo;
 import org.firstinspires.ftc.teamcode.Robot;
 
 @TeleOp(name="TeleOp")
-public class Teleop extends LinearOpMode {
-    // Use External Class
+public class Tele extends LinearOpMode {
+    /** Usage External Class */
     Robot robot = new Robot();
 
-    // Hardware
+    /** Hardware */
     IMU imu;
     Servo LA, RA;
     DcMotor FL, FR, BL, BR;
 
-    // Variables
+    /** Variables */
 
 
     private void Init(){
@@ -50,6 +50,7 @@ public class Teleop extends LinearOpMode {
         robot.BR.setPower((y + x - r)/ d);
 
         telemetry.addData("yaw", Math.toDegrees(robot.yaw));
+        telemetry.addData("Encoder", robot.FL.getCurrentPosition());
         telemetry.update();
     }
 
@@ -58,7 +59,7 @@ public class Teleop extends LinearOpMode {
         Init();
         waitForStart();
         if (opModeIsActive()) {
-            // Put run blocks here.
+            robot.PID_timer.reset();
             while (opModeIsActive()) {
                 while(gamepad1.touchpad) imu.resetYaw();
                 Movement();

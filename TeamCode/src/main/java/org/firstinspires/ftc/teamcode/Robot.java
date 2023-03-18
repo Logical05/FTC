@@ -11,14 +11,14 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 
 public class Robot {
-    // Hardware
+    /** Hardware */
     public IMU imu;
     public Servo LA, RA;
     public DcMotor FL, FR, BL, BR;
 
-    // Variables
-    ElapsedTime PID_timer = new ElapsedTime();
-    public double yaw, error, lasterror=0, intergralsum=0;
+    /** Variables */
+    public ElapsedTime PID_timer = new ElapsedTime();
+    public double yaw, error, lasterror=0, integral=0;
 
     public void Initialize(IMU IMU, DcMotor.RunMode mode,
                            DcMotor Front_Left, DcMotor Front_Right,
@@ -62,24 +62,23 @@ public class Robot {
     }
 
     public double AngleWrap(double radians) {
-        while (radians > Math.PI) radians -= 2 * Math.PI;
-        while (radians < -Math.PI) radians += 2 * Math.PI;
+        if (radians > Math.PI)  radians -= 2 * Math.PI;
+        if (radians < -Math.PI) radians += 2 * Math.PI;
         return radians;
     }
 
     public double PIDControl(double setpoint){
-        yaw = -imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);
         double[] K_PID = {0.8, 0.3, 0.2};
+        double dT = PID_timer.seconds();
+        yaw = -imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);
         error = AngleWrap(setpoint - yaw);
-        intergralsum = Plus_Minus(Math.toDegrees(error), 0, 0.45) ? 0 : intergralsum + (error * PID_timer.seconds());
-        double derivative = (error - lasterror) / PID_timer.seconds();
+        integral = Plus_Minus(Math.toDegrees(error), 0, 0.45) ? 0 : integral + (error * dT);
+        double derivative = (error - lasterror) / dT;
         lasterror = error;
-
+        double output = (error * K_PID[0]) + (integral * K_PID[1]) + (derivative * K_PID[2]);
+        if (0 < output && output < 0.08) output = 0.08;
+        if (-0.08 < output && output < 0) output = -0.08;
         PID_timer.reset();
-
-        double output = (error * K_PID[0]) + (intergralsum * K_PID[1]) + (derivative * K_PID[2]);
-        while (0 < output && output < 0.05) output = 0.05;
-        while (-0.05 < output && output < 0) output = -0.05;
         return output;
     }
 }
