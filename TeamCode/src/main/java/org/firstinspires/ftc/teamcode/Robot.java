@@ -14,15 +14,23 @@ public class Robot {
     /** Hardware */
     public IMU imu;
     public Servo LA, RA;
-    public DcMotor FL, FR, BL, BR;
+    public DcMotor FL, FR, BL, BR, B;
 
     /** Variables */
     public ElapsedTime PID_timer = new ElapsedTime();
     public double yaw, error, lasterror=0, integral=0;
 
+    public void MovePower(double Front_Left, double Front_Right,
+                         double Back_Left,  double Back_Right) {
+        FL.setPower(Front_Left);
+        FR.setPower(Front_Right);
+        BL.setPower(Back_Left);
+        BR.setPower(Back_Right);
+    }
+
     public void Initialize(IMU IMU, DcMotor.RunMode mode,
                            DcMotor Front_Left, DcMotor Front_Right,
-                           DcMotor Back_Left,  DcMotor Back_Right,
+                           DcMotor Back_Left,  DcMotor Back_Right, DcMotor Base,
                            double Arm_pos, Servo Left_Arm, Servo Right_Arm) {
         // Add Variable
         imu = IMU;
@@ -30,6 +38,7 @@ public class Robot {
         FR = Front_Right;
         BL = Back_Left;
         BR = Back_Right;
+        B  = Base;
         LA = Left_Arm;
         RA = Right_Arm;
 
@@ -45,11 +54,17 @@ public class Robot {
         FR.setMode(mode);
         BL.setMode(mode);
         BR.setMode(mode);
+        B .setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        B .setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         // SetBehavior Motors
         FL.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         FR.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         BL.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         BR.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        B .setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        // SetPower
+        MovePower(0, 0, 0, 0);
+        B.setPower(0);
 
         // Reverse Servo
         RA.setDirection(Servo.Direction.REVERSE);
@@ -78,7 +93,6 @@ public class Robot {
         double output = (error * K_PID[0]) + (integral * K_PID[1]) + (derivative * K_PID[2]);
         if (0 < output && output < 0.08) output = 0.08;
         if (-0.08 < output && output < 0) output = -0.08;
-        PID_timer.reset();
         return output;
     }
 }
