@@ -54,17 +54,17 @@ public class Robot {
         FR.setMode(mode);
         BL.setMode(mode);
         BR.setMode(mode);
-        B .setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        B .setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+//        B .setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+//        B .setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         // SetBehavior Motors
         FL.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         FR.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         BL.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         BR.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        B .setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+//        B .setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         // SetPower
         MovePower(0, 0, 0, 0);
-        B.setPower(0);
+//        B.setPower(0);
 
         // Reverse Servo
         RA.setDirection(Servo.Direction.REVERSE);

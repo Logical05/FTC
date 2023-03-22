@@ -28,7 +28,7 @@ public class Tele extends LinearOpMode {
         FR   = hardwareMap.get(DcMotor.class, "Front_Right");
         BL   = hardwareMap.get(DcMotor.class, "Back_Left");
         BR   = hardwareMap.get(DcMotor.class, "Back_Right");
-        B    = hardwareMap.get(DcMotor.class, "Base");
+//        B    = hardwareMap.get(DcMotor.class, "Base");
         LA   = hardwareMap.get(Servo.class,   "Left_Arm");
         RA   = hardwareMap.get(Servo.class,   "Right_Arm");
 
@@ -45,12 +45,12 @@ public class Tele extends LinearOpMode {
                 (robot.Plus_Minus(Math.toDegrees(robot.error), 0, 0.45) ? 0 : PID);
         // Denominator for division to get no more than 1
         double d = Math.max(Math.abs(y) + Math.abs(x) + Math.abs(r), 1);
-        double pow = (y + x + r)/ d;
-        robot.MovePower(pow, pow, pow, pow);
+        robot.MovePower((y + x + r)/ d, (y - x - r)/ d,
+                        (y - x + r)/ d, (y + x - r)/ d);
         robot.PID_timer.reset();
 
         telemetry.addData("yaw", Math.toDegrees(robot.yaw));
-        telemetry.addData("Encoder", B.getCurrentPosition());
+//        telemetry.addData("Encoder", B.getCurrentPosition());
         telemetry.update();
     }
 
