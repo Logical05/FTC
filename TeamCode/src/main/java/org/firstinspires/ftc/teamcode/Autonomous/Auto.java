@@ -15,7 +15,7 @@ public class Auto extends LinearOpMode {
 
     /** Hardware */
     IMU imu;
-    Servo LA, RA;
+    Servo LA, RA, KP;
     DcMotor FL, FR, BL, BR, B;
 
     /** Variables */
@@ -30,9 +30,10 @@ public class Auto extends LinearOpMode {
         B    = hardwareMap.get(DcMotor.class, "Base");
         LA   = hardwareMap.get(Servo.class,   "Left_Arm");
         RA   = hardwareMap.get(Servo.class,   "Right_Arm");
+        KP   = hardwareMap.get(Servo.class,   "Keeper");
 
         // Initialize Robot
-        robot.Initialize(imu, DcMotor.RunMode.RUN_WITHOUT_ENCODER, FL, FR, BL, BR, B, 0.35, LA, RA);
+        robot.Initialize(imu, DcMotor.RunMode.RUN_WITHOUT_ENCODER, FL, FR, BL, BR, B, 0.35, LA, RA, 0, KP);
     }
 
     @Override

@@ -13,7 +13,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 public class Robot {
     /** Hardware */
     public IMU imu;
-    public Servo LA, RA;
+    public Servo LA, RA, KP;
     public DcMotor FL, FR, BL, BR, B;
 
     /** Variables */
@@ -31,7 +31,8 @@ public class Robot {
     public void Initialize(IMU IMU, DcMotor.RunMode mode,
                            DcMotor Front_Left, DcMotor Front_Right,
                            DcMotor Back_Left,  DcMotor Back_Right, DcMotor Base,
-                           double Arm_pos, Servo Left_Arm, Servo Right_Arm) {
+                           double Arm_pos, Servo Left_Arm, Servo Right_Arm,
+                           double Keeper_pos, Servo Keeper) {
         // Add Variable
         imu = IMU;
         FL = Front_Left;
@@ -41,6 +42,7 @@ public class Robot {
         B  = Base;
         LA = Left_Arm;
         RA = Right_Arm;
+        KP = Keeper;
 
         // Initialize IMU
         imu.initialize(new IMU.Parameters(new RevHubOrientationOnRobot(RevHubOrientationOnRobot.LogoFacingDirection.FORWARD,
@@ -71,6 +73,7 @@ public class Robot {
         // Set Servo Position
         LA.setPosition(Arm_pos);
         RA.setPosition(Arm_pos);
+        KP.setPosition(Keeper_pos);
     }
     public boolean Plus_Minus(double input, int check, double range) {
         return check - range < input && input < check + range;

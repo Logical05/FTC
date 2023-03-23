@@ -15,11 +15,11 @@ public class Tele extends LinearOpMode {
 
     /** Hardware */
     IMU imu;
-    Servo LA, RA;
+    Servo LA, RA, KP;
     DcMotor FL, FR, BL, BR, B;
 
     /** Variables */
-
+    double KP_pos = 0;
 
     private void Init(){
         // HardwareMap
@@ -31,9 +31,10 @@ public class Tele extends LinearOpMode {
 //        B    = hardwareMap.get(DcMotor.class, "Base");
         LA   = hardwareMap.get(Servo.class,   "Left_Arm");
         RA   = hardwareMap.get(Servo.class,   "Right_Arm");
+        KP   = hardwareMap.get(Servo.class,   "Keeper");
 
         // Initialize Robot
-        robot.Initialize(imu, DcMotor.RunMode.RUN_WITHOUT_ENCODER, FL, FR, BL, BR, B, 0.35, LA, RA);
+        robot.Initialize(imu, DcMotor.RunMode.RUN_WITHOUT_ENCODER, FL, FR, BL, BR, B, 0.35, LA, RA, KP_pos, KP);
     }
 
     private void Movement(){
@@ -54,6 +55,11 @@ public class Tele extends LinearOpMode {
         telemetry.update();
     }
 
+    private void Keep(){
+        KP_pos = gamepad1.left_bumper ? KP_pos - 0.01 : (gamepad1.right_bumper ? KP_pos + 0.01 : KP_pos);
+        KP.setPosition(KP_pos);
+    }
+
     private void Turn_Base(int angle) {
         int cpr = 1440;              // Encoder counts per revolution
         int c = (angle * cpr)/ 360;  // Encoder counts
@@ -71,6 +77,7 @@ public class Tele extends LinearOpMode {
             while (opModeIsActive()) {
                 if(gamepad1.touchpad) imu.resetYaw();
                 Movement();
+                Keep();
             }
         }
     }
