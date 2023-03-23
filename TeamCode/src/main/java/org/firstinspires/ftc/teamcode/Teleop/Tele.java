@@ -5,9 +5,7 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.Servo;
-import com.qualcomm.robotcore.util.Range;
 
-import org.checkerframework.checker.units.qual.K;
 import org.firstinspires.ftc.teamcode.Robot;
 
 @TeleOp(name="TeleOp")
@@ -25,18 +23,18 @@ public class Tele extends LinearOpMode {
 
     private void Init(){
         // HardwareMap
-        imu  = hardwareMap.get(IMU.class,     "imu");
-        FL   = hardwareMap.get(DcMotor.class, "Front_Left");
-        FR   = hardwareMap.get(DcMotor.class, "Front_Right");
-        BL   = hardwareMap.get(DcMotor.class, "Back_Left");
-        BR   = hardwareMap.get(DcMotor.class, "Back_Right");
-//        B    = hardwareMap.get(DcMotor.class, "Base");
-        LA   = hardwareMap.get(Servo.class,   "Left_Arm");
-        RA   = hardwareMap.get(Servo.class,   "Right_Arm");
+        imu = hardwareMap.get(IMU.class,     "imu");
+        FL  = hardwareMap.get(DcMotor.class, "Front_Left");
+        FR  = hardwareMap.get(DcMotor.class, "Front_Right");
+        BL  = hardwareMap.get(DcMotor.class, "Back_Left");
+        BR  = hardwareMap.get(DcMotor.class, "Back_Right");
+//        B   = hardwareMap.get(DcMotor.class, "Base");
+        LA  = hardwareMap.get(Servo.class,   "Left_Arm");
+        RA  = hardwareMap.get(Servo.class,   "Right_Arm");
         K   = hardwareMap.get(Servo.class,   "Keeper");
 
         // Initialize Robot
-        robot.Initialize(imu, DcMotor.RunMode.RUN_WITHOUT_ENCODER, FL, FR, BL, BR, B, 0.35, LA, RA, K_pos, K);
+        robot.Initialize(imu, DcMotor.RunMode.RUN_WITHOUT_ENCODER, FL, FR, BL, BR, B, 0.35, LA, RA, 0, K);
     }
 
     private void Movement(){
@@ -58,7 +56,7 @@ public class Tele extends LinearOpMode {
     }
 
     private void Keep(){
-        K_pos = gamepad1.left_bumper ? K_pos = 0 : (gamepad1.right_bumper ? K_pos = 0.25 : K_pos);
+        K_pos = gamepad1.left_bumper ? 0 : (gamepad1.right_bumper ? 0.25 : K_pos);
         K.setPosition(K_pos);
     }
 

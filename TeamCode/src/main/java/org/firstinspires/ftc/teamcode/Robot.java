@@ -21,7 +21,7 @@ public class Robot {
     public double yaw, error, lasterror=0, integral=0;
 
     public void MovePower(double Front_Left, double Front_Right,
-                         double Back_Left,  double Back_Right) {
+                          double Back_Left,  double Back_Right) {
         FL.setPower(Front_Left);
         FR.setPower(Front_Right);
         BL.setPower(Back_Left);
@@ -42,7 +42,7 @@ public class Robot {
         B  = Base;
         LA = Left_Arm;
         RA = Right_Arm;
-        K = Keeper;
+        K  = Keeper;
 
         // Initialize IMU
         imu.initialize(new IMU.Parameters(new RevHubOrientationOnRobot(RevHubOrientationOnRobot.LogoFacingDirection.FORWARD,
@@ -73,7 +73,7 @@ public class Robot {
         // Set Servo Position
         LA.setPosition(Arm_pos);
         RA.setPosition(Arm_pos);
-        K.setPosition(Keeper_pos);
+        K .setPosition(Keeper_pos);
     }
     public boolean Plus_Minus(double input, int check, double range) {
         return check - range < input && input < check + range;
