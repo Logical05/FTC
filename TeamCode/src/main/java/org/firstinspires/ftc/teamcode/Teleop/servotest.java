@@ -9,6 +9,7 @@ import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.Range;
 
+import org.checkerframework.checker.units.qual.K;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
@@ -23,8 +24,10 @@ public class servotest extends LinearOpMode {
 
     private Servo LA = null;
     private Servo RA = null;
+    private Servo K  = null;
     private double up;
     private IMU imu;
+    double K_pos = 0;
     private void Init() {
         //detect hardware
         FL = hardwareMap.get(DcMotor.class, "Front_Left");
@@ -33,6 +36,7 @@ public class servotest extends LinearOpMode {
         BR = hardwareMap.get(DcMotor.class, "Back_Right");
         LA = hardwareMap.get(Servo.class, "Left_Arm");
         RA = hardwareMap.get(Servo.class, "Right_Arm");
+        K  = hardwareMap.get(Servo.class,   "Keeper");
         imu = hardwareMap.get(IMU.class, "imu");
         //reverse motor and servo
         FR.setDirection(DcMotorSimple.Direction.REVERSE);
@@ -73,11 +77,15 @@ public class servotest extends LinearOpMode {
     private void Servo(){
         up = gamepad1.dpad_left ? up-0.005 : (gamepad1.dpad_right ? up+0.005 : up);
         up = Range.clip(up, 0, 0.35);
+        K_pos = gamepad1.left_bumper ? K_pos - 0.01 : (gamepad1.right_bumper ? K_pos + 0.01 : K_pos);
+        K_pos = Range.clip(K_pos, 0, 0.25);
 
+        K.setPosition(K_pos);
         RA.setPosition(up);
         LA.setPosition(up);
 
         telemetry.addData("up", up);
+        telemetry.addData("Keep", K_pos);
         sleep(20);
     }
     private boolean Plus_Minus(float input, int check, double range) {

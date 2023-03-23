@@ -5,7 +5,9 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.util.Range;
 
+import org.checkerframework.checker.units.qual.K;
 import org.firstinspires.ftc.teamcode.Robot;
 
 @TeleOp(name="TeleOp")
@@ -15,11 +17,11 @@ public class Tele extends LinearOpMode {
 
     /** Hardware */
     IMU imu;
-    Servo LA, RA, KP;
+    Servo LA, RA, K;
     DcMotor FL, FR, BL, BR, B;
 
     /** Variables */
-    double KP_pos = 0;
+    double K_pos = 0;
 
     private void Init(){
         // HardwareMap
@@ -31,10 +33,10 @@ public class Tele extends LinearOpMode {
 //        B    = hardwareMap.get(DcMotor.class, "Base");
         LA   = hardwareMap.get(Servo.class,   "Left_Arm");
         RA   = hardwareMap.get(Servo.class,   "Right_Arm");
-        KP   = hardwareMap.get(Servo.class,   "Keeper");
+        K   = hardwareMap.get(Servo.class,   "Keeper");
 
         // Initialize Robot
-        robot.Initialize(imu, DcMotor.RunMode.RUN_WITHOUT_ENCODER, FL, FR, BL, BR, B, 0.35, LA, RA, KP_pos, KP);
+        robot.Initialize(imu, DcMotor.RunMode.RUN_WITHOUT_ENCODER, FL, FR, BL, BR, B, 0.35, LA, RA, K_pos, K);
     }
 
     private void Movement(){
@@ -56,8 +58,8 @@ public class Tele extends LinearOpMode {
     }
 
     private void Keep(){
-        KP_pos = gamepad1.left_bumper ? KP_pos - 0.01 : (gamepad1.right_bumper ? KP_pos + 0.01 : KP_pos);
-        KP.setPosition(KP_pos);
+        K_pos = gamepad1.left_bumper ? K_pos = 0 : (gamepad1.right_bumper ? K_pos = 0.25 : K_pos);
+        K.setPosition(K_pos);
     }
 
     private void Turn_Base(int angle) {
