@@ -28,7 +28,7 @@ public class Tele extends LinearOpMode {
         FR  = hardwareMap.get(DcMotor.class, "Front_Right");
         BL  = hardwareMap.get(DcMotor.class, "Back_Left");
         BR  = hardwareMap.get(DcMotor.class, "Back_Right");
-//        B   = hardwareMap.get(DcMotor.class, "Base");
+        B   = hardwareMap.get(DcMotor.class, "Base");
         LA  = hardwareMap.get(Servo.class,   "Left_Arm");
         RA  = hardwareMap.get(Servo.class,   "Right_Arm");
         K   = hardwareMap.get(Servo.class,   "Keeper");
@@ -38,34 +38,24 @@ public class Tele extends LinearOpMode {
     }
 
     private void Movement(){
-        double x = gamepad1.left_stick_x;
-        double y = -gamepad1.left_stick_y;
-        double PID = robot.PIDControl(0);
+        double Lx =  gamepad1.left_stick_x;
+        double Ly = -gamepad1.left_stick_y;
+        double Rx =  gamepad1.right_stick_x;
+        double[] K_PID = {0.8, 0.3, 0.2};
+        double PID = robot.PIDControl(0, K_PID);
         // Rotate Condition
-        double r = Math.abs(gamepad1.right_stick_x) > 0 ? gamepad1.right_stick_x :
+        double r = Math.abs(Rx) > 0 ? Rx :
                 (robot.Plus_Minus(Math.toDegrees(robot.error), 0, 0.45) ? 0 : PID);
         // Denominator for division to get no more than 1
-        double d = Math.max(Math.abs(y) + Math.abs(x) + Math.abs(r), 1);
-        robot.MovePower((y + x + r)/ d, (y - x - r)/ d,
-                        (y - x + r)/ d, (y + x - r)/ d);
+        double d = Math.max(Math.abs(Ly) + Math.abs(Lx) + Math.abs(r), 1);
+        robot.MovePower((Ly + Lx + r)/ d, (Ly - Lx - r)/ d,
+                        (Ly - Lx + r)/ d, (Ly + Lx - r)/ d);
         robot.PID_timer.reset();
-
-        telemetry.addData("yaw", Math.toDegrees(robot.yaw));
-//        telemetry.addData("Encoder", B.getCurrentPosition());
-        telemetry.update();
     }
 
     private void Keep(){
         K_pos = gamepad1.left_bumper ? 0 : (gamepad1.right_bumper ? 0.25 : K_pos);
         K.setPosition(K_pos);
-    }
-
-    private void Turn_Base(int angle) {
-        int cpr = 1440;              // Encoder counts per revolution
-        int c = (angle * cpr)/ 360;  // Encoder counts
-        B.setTargetPosition(c);
-        B.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        B.setPower(0.5);
     }
 
     @Override
@@ -78,6 +68,9 @@ public class Tele extends LinearOpMode {
                 if(gamepad1.touchpad) imu.resetYaw();
                 Movement();
                 Keep();
+                telemetry.addData("yaw", Math.toDegrees(robot.yaw));
+                telemetry.addData("Encoder", B.getCurrentPosition());
+                telemetry.update();
             }
         }
     }

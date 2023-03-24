@@ -56,17 +56,17 @@ public class Robot {
         FR.setMode(mode);
         BL.setMode(mode);
         BR.setMode(mode);
-//        B .setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-//        B .setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        B .setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        B .setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         // SetBehavior Motors
         FL.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         FR.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         BL.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         BR.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-//        B .setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        B .setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         // SetPower
         MovePower(0, 0, 0, 0);
-//        B.setPower(0);
+        B.setPower(0);
 
         // Reverse Servo
         RA.setDirection(Servo.Direction.REVERSE);
@@ -85,8 +85,15 @@ public class Robot {
         return radians;
     }
 
-    public double PIDControl(double setpoint){
-        double[] K_PID = {0.8, 0.3, 0.2};
+    public void Turn_Base(int angle) {
+        int cpr = 1440;              // Encoder counts per revolution
+        int c = (angle * cpr)/ 360;  // Encoder counts
+        B.setTargetPosition(c);
+        B.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        B.setPower(0.5);
+    }
+
+    public double PIDControl(double setpoint, double[] K_PID){
         double dT = PID_timer.seconds();
         yaw = -imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);
         error = AngleWrap(setpoint - yaw);
