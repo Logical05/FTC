@@ -72,10 +72,12 @@ public class Tele extends LinearOpMode {
 
     private void Lift() {
         int CurrentPosition = Math.max(LL.getCurrentPosition(), RL.getCurrentPosition());
-        double k = 10;
+        double Min_Power = 10;
         double Max_Lift = robot.Max_Lift;
-        double Latus_Rectum = -k / ((Max_Lift * Max_Lift) / 4);
-        double Parabola = (Latus_Rectum * ((CurrentPosition - Max_Lift) * (CurrentPosition - Max_Lift))) + k;
+        double k = 10;
+        double h = Max_Lift / 2;
+        double Latus_Rectum = -k / (h * h);
+        double Parabola = ((Latus_Rectum * ((CurrentPosition - h) * (CurrentPosition - h))) + k) + Min_Power;
         double High = CurrentPosition >= Max_Lift ?  0 :
                       Parabola        >= 1        ?  1 : Parabola;
         double Low  = CurrentPosition <= 0        ?  0 :
