@@ -25,7 +25,7 @@ public class Auto extends LinearOpMode {
     /** Hardware */
     IMU imu;
     Servo LA, RA, K;
-    DcMotor FL, FR, BL, BR, B;
+    DcMotor FL, FR, BL, BR, B, LL, RL;
     OpenCvCamera camera;
     AprilTagDetectionPipeline aprilTagDetectionPipeline;
 
@@ -34,23 +34,27 @@ public class Auto extends LinearOpMode {
 
     private void Init(){
         // HardwareMap
-        imu  = hardwareMap.get(IMU.class,     "imu");
-        FL   = hardwareMap.get(DcMotor.class, "Front_Left");
-        FR   = hardwareMap.get(DcMotor.class, "Front_Right");
-        BL   = hardwareMap.get(DcMotor.class, "Back_Left");
-        BR   = hardwareMap.get(DcMotor.class, "Back_Right");
-        B    = hardwareMap.get(DcMotor.class, "Base");
-        LA   = hardwareMap.get(Servo.class,   "Left_Arm");
-        RA   = hardwareMap.get(Servo.class,   "Right_Arm");
-        K    = hardwareMap.get(Servo.class,   "Keeper");
+        imu = hardwareMap.get(IMU.class,     "imu");
+        FL  = hardwareMap.get(DcMotor.class, "Front_Left");
+        FR  = hardwareMap.get(DcMotor.class, "Front_Right");
+        BL  = hardwareMap.get(DcMotor.class, "Back_Left");
+        BR  = hardwareMap.get(DcMotor.class, "Back_Right");
+        B   = hardwareMap.get(DcMotor.class, "Base");
+        LL  = hardwareMap.get(DcMotor.class, "Left_Lift");
+        RL  = hardwareMap.get(DcMotor.class, "Right_Lift");
+        LA  = hardwareMap.get(Servo.class,   "Left_Arm");
+        RA  = hardwareMap.get(Servo.class,   "Right_Arm");
+        K   = hardwareMap.get(Servo.class,   "Keeper");
 
         // Initialize Robot
-        robot.Initialize(imu, DcMotor.RunMode.RUN_WITHOUT_ENCODER, FL, FR, BL, BR, B, 0, LA, RA, 0, K);
+        robot.Initialize(imu, DcMotor.RunMode.RUN_USING_ENCODER, FL, FR, BL, BR,B, LL, RL,
+                0, LA, RA, 0, K);
 
         // Initialize Camera
-        int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId",
-                                                                                      "id", hardwareMap.appContext.getPackageName());
-        camera = OpenCvCameraFactory.getInstance().createWebcam(hardwareMap.get(WebcamName.class, "Webcam 1"), cameraMonitorViewId);
+        int cameraMonitorViewId = hardwareMap.appContext
+                .getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
+        camera = OpenCvCameraFactory.getInstance().createWebcam(
+                 hardwareMap.get(WebcamName.class, "Webcam 1"),cameraMonitorViewId);
         aprilTagDetectionPipeline = new AprilTagDetectionPipeline(0.166, 578.272, 578.272, 402.145, 221.506);
         camera.setPipeline(aprilTagDetectionPipeline);
         camera.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener() {
@@ -82,6 +86,21 @@ public class Auto extends LinearOpMode {
                 break;
             }
         }
+    }
+
+    private void Move(double Setpoint, double Pwr_X, double Pwr_Y){
+        double[] K_PID = {0.8, 0.3, 0.1};
+        double Beta   = robot.yaw;
+        double Pwr_X2 = (Math.cos(Beta) * Pwr_X) - (Math.sin(Beta) * Pwr_Y);
+        double Pwr_Y2 = (Math.sin(Beta) * Pwr_X) - (Math.cos(Beta) * Pwr_Y);
+        double PID = robot.PIDControl(Setpoint, K_PID);
+        // Rotate Condition
+        double R = robot.Plus_Minus(Math.toDegrees(robot.error), 0, 0.45) ? 0 : PID;
+        // Denominator for division to get no more than 1
+        double D = Math.max(Math.abs(Pwr_X2) + Math.abs(Pwr_Y2) + Math.abs(R), 1);
+        robot.MovePower((Pwr_Y2 + Pwr_X2 + R)/ D, (Pwr_Y2 - Pwr_X2 - R)/ D,
+                        (Pwr_Y2 - Pwr_X2 + R)/ D,  (Pwr_Y2 + Pwr_X2 - R)/ D);
+        robot.PID_timer.reset();
     }
 
     @Override
