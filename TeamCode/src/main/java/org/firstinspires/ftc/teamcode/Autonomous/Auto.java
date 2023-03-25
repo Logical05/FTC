@@ -5,7 +5,6 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.Servo;
-import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.teamcode.AprilTagDetectionPipeline;
@@ -98,8 +97,8 @@ public class Auto extends LinearOpMode {
         double R = robot.Plus_Minus(Math.toDegrees(robot.error), 0, 0.45) ? 0 : PID;
         // Denominator for division to get no more than 1
         double D = Math.max(Math.abs(Pwr_X2) + Math.abs(Pwr_Y2) + Math.abs(R), 1);
-        robot.MovePower((Pwr_Y2 + Pwr_X2 + R)/ D, (Pwr_Y2 - Pwr_X2 - R)/ D,
-                        (Pwr_Y2 - Pwr_X2 + R)/ D,  (Pwr_Y2 + Pwr_X2 - R)/ D);
+        robot.MovePower((Pwr_Y2 + Pwr_X2 + R) / D, (Pwr_Y2 - Pwr_X2 - R) / D,
+                        (Pwr_Y2 - Pwr_X2 + R) / D,  (Pwr_Y2 + Pwr_X2 - R) / D);
         robot.PID_timer.reset();
     }
 

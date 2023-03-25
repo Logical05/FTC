@@ -58,8 +58,8 @@ public class Tele extends LinearOpMode {
         double R = robot.Plus_Minus(Math.toDegrees(robot.error), 0, 0.45) ? 0 : PID;
         // Denominator for division to get no more than 1
         double D = Math.max(Math.abs(Ly) + Math.abs(Lx) + Math.abs(R), 1);
-        robot.MovePower((Ly + Lx + R)/ D, (Ly - Lx - R)/ D,
-                        (Ly - Lx + R)/ D,  (Ly + Lx - R)/ D);
+        robot.MovePower((Ly + Lx + R) / D, (Ly - Lx - R) / D,
+                        (Ly - Lx + R) / D,  (Ly + Lx - R) / D);
         robot.PID_timer.reset();
     }
 
@@ -71,14 +71,19 @@ public class Tele extends LinearOpMode {
     }
 
     private void Lift() {
-        int LL_pos = LL.getCurrentPosition();
-        int RL_pos = RL.getCurrentPosition();
+        int CurrentPosition = Math.max(LL.getCurrentPosition(), RL.getCurrentPosition());
+        double k = 10;
+        double Max_Lift = robot.Max_Lift;
+        double Latus_Rectum = -k / ((Max_Lift * Max_Lift) / 4);
+        double Parabola = (Latus_Rectum * ((CurrentPosition - Max_Lift) * (CurrentPosition - Max_Lift))) + k;
+        double High = CurrentPosition >= Max_Lift ?  0 :
+                      Parabola        >= 1        ?  1 : Parabola;
+        double Low  = CurrentPosition <= 0        ?  0 :
+                      Parabola        >= 1        ? -1 : -Parabola;
         double LT = gamepad1.left_trigger;
         double RT = gamepad1.right_trigger;
-        double High = LL_pos >= robot.Max_Lift || RL_pos >= robot.Max_Lift ? 0 :  LT;
-        double Low  = LL_pos <= 0              || RL_pos <= 0              ? 0 : -RT;
-        double Power = LT >= 0.5 ? High :
-                       RT >= 0.5 ? Low  : 0;
+        double Power = LT >= 0.25 ? High :
+                       RT >= 0.25 ? Low  : 0;
         LL.setPower(Power);
         RL.setPower(Power);
     }
