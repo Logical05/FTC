@@ -115,8 +115,8 @@ public class Robot {
         double derivative = (error - lasterror) / dT;
         lasterror = error;
         double output = (error * K_PID[0]) + (integral * K_PID[1]) + (derivative * K_PID[2]);
-        if (0 < output && output < 0.12) output = 0.12;
-        if (-0.12 < output && output < 0) output = -0.12;
+        if (0 < output && output < 0.08) output = 0.08;
+        if (-0.08 < output && output < 0) output = 0.08;
         return output;
     }
 }

@@ -48,8 +48,8 @@ public class Tele extends LinearOpMode {
         double Ly   =  gamepad1.left_stick_y;
         double Rx   =  gamepad1.right_stick_x;
         double Ry   = -gamepad1.right_stick_y;
-        double Pwr_x = Math.abs(Lx) > 0.5 && Math.abs(Ly) < 0.5 ? Lx : 0;
-        double Pwr_y = Math.abs(Ly) > 0.5 && Math.abs(Lx) < 0.5 ? Ly : 0;
+        double Pwr_x = Math.abs(Lx) > 0.25 && Math.abs(Ly) < 0.25 ? Lx : 0;
+        double Pwr_y = Math.abs(Ly) > 0.25 && Math.abs(Lx) < 0.25 ? Ly : 0;
         double Beta =  robot.yaw;
         setpoint = Rx >  0.75 && Math.abs(Ry) < 0.75 ?  Math.toRadians( 90) :
                    Rx < -0.75 && Math.abs(Ry) < 0.75 ?  Math.toRadians(-90) :
@@ -57,7 +57,7 @@ public class Tele extends LinearOpMode {
                    Ry < -0.75 && Math.abs(Rx) < 0.75 ?  Math.toRadians(180) : setpoint;
         double Pwr_X2 = (Math.cos(Beta) * Pwr_x) - (Math.sin(Beta) * Pwr_y);
         double Pwr_Y2 = (Math.sin(Beta) * Pwr_x) - (Math.cos(Beta) * Pwr_y);
-        double[] K_PID_move    = {1.7, 0.3, 0.08};
+        double[] K_PID_move    = {1.7, 0.3, 0.05};
         double[] K_PID_notmove = {0.8, 0.2, 0.05};
         double[] K_PID = Lx < 0.25 && Ly < 0.25 ? K_PID_move : K_PID_notmove;
         double PID = robot.PIDControl(setpoint, K_PID);
