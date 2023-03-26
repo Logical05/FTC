@@ -104,7 +104,7 @@ public class Robot {
         int c = (angle * cpr)/ 360;  // Encoder counts
         B.setTargetPosition(c);
         B.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        B.setPower(0.5);
+        B.setPower(0.4);
     }
 
     public double PIDControl(double setpoint, double[] K_PID){
@@ -115,8 +115,8 @@ public class Robot {
         double derivative = (error - lasterror) / dT;
         lasterror = error;
         double output = (error * K_PID[0]) + (integral * K_PID[1]) + (derivative * K_PID[2]);
-        if (0 < output && output < 0.08) output = 0.08;
-        if (-0.08 < output && output < 0) output = -0.08;
+        if (0 < output && output < 0.12) output = 0.12;
+        if (-0.12 < output && output < 0) output = -0.12;
         return output;
     }
 }

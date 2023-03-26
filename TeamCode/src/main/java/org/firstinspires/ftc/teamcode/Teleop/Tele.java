@@ -21,6 +21,7 @@ public class Tele extends LinearOpMode {
     /** Variables */
     double K_pos = 0;
     double setpoint = 0;
+    int Base_angle = 0;
 
     private void Init(){
         // HardwareMap
@@ -37,32 +38,39 @@ public class Tele extends LinearOpMode {
         K   = hardwareMap.get(Servo.class,   "Keeper");
 
         // Initialize Robot
+        //Armpos 0.35
         robot.Initialize(imu, DcMotor.RunMode.RUN_WITHOUT_ENCODER, FL, FR, BL, BR, B, LL, RL,
-                0.35, LA, RA, 0, K);
+                0, LA, RA, 0, K);
     }
 
     private void Movement(){
-        double Lx =  gamepad1.left_stick_x;
-        double Ly = -gamepad1.left_stick_y;
-        double Rx =  gamepad1.right_stick_x;
-        double Ry =  gamepad1.right_stick_y;
-        setpoint = Rx > 0.5 && Math.abs(Ry) < 0.5 ? 90 :
-                   Rx < 0.5 && Math.abs(Ry) < 0.5 ? -90 :
-                   Ry > 0.5 && Math.abs(Rx) < 0.5 ? 0 :
-                   Ry < 0.5 && Math.abs(Rx) < 0.5 ? 180 : setpoint;
-        double[] K_PID = {0.83, 0.35, 0.1};
+        double Lx   =  gamepad1.left_stick_x;
+        double Ly   =  gamepad1.left_stick_y;
+        double Rx   =  gamepad1.right_stick_x;
+        double Ry   = -gamepad1.right_stick_y;
+        double Pwr_x = Math.abs(Lx) > 0.5 && Math.abs(Ly) < 0.5 ? Lx : 0;
+        double Pwr_y = Math.abs(Ly) > 0.5 && Math.abs(Lx) < 0.5 ? Ly : 0;
+        double Beta =  robot.yaw;
+        setpoint = Rx >  0.75 && Math.abs(Ry) < 0.75 ?  Math.toRadians( 90) :
+                   Rx < -0.75 && Math.abs(Ry) < 0.75 ?  Math.toRadians(-90) :
+                   Ry >  0.75 && Math.abs(Rx) < 0.75 ?  Math.toRadians(  0) :
+                   Ry < -0.75 && Math.abs(Rx) < 0.75 ?  Math.toRadians(180) : setpoint;
+        double Pwr_X2 = (Math.cos(Beta) * Pwr_x) - (Math.sin(Beta) * Pwr_y);
+        double Pwr_Y2 = (Math.sin(Beta) * Pwr_x) - (Math.cos(Beta) * Pwr_y);
+        double[] K_PID_move    = {1.7, 0.3, 0.08};
+        double[] K_PID_notmove = {0.8, 0.2, 0.05};
+        double[] K_PID = Lx < 0.25 && Ly < 0.25 ? K_PID_move : K_PID_notmove;
         double PID = robot.PIDControl(setpoint, K_PID);
         // Rotate Condition
 //        double R = Math.abs(Rx) > 0 ? Rx :
 //                   robot.Plus_Minus(Math.toDegrees(robot.error), 0, 0.45) ? 0 : PID;
         double R = robot.Plus_Minus(Math.toDegrees(robot.error), 0, 0.45) ? 0 : PID;
         // Denominator for division to get no more than 1
-        double D = Math.max(Math.abs(Ly) + Math.abs(Lx) + Math.abs(R), 1);
-        robot.MovePower((Ly + Lx + R) / D, (Ly - Lx - R) / D,
-                        (Ly - Lx + R) / D,  (Ly + Lx - R) / D);
+        double D = Math.max(Math.abs(Pwr_X2) + Math.abs(Pwr_Y2) + Math.abs(R), 1);
+        robot.MovePower((Pwr_Y2 + Pwr_X2 + R) / D, (Pwr_Y2 - Pwr_X2 - R) / D,
+                        (Pwr_Y2 - Pwr_X2 + R) / D,  (Pwr_Y2 + Pwr_X2 - R) / D);
         robot.PID_timer.reset();
     }
-
 
     private void Keep() {
         K_pos = gamepad1.left_bumper  ? 0 :
@@ -72,7 +80,7 @@ public class Tele extends LinearOpMode {
 
     private void Lift() {
         int CurrentPosition = Math.max(LL.getCurrentPosition(), RL.getCurrentPosition());
-        double Min_Power = 10;
+        double Min_Power = 0.25;
         double Max_Lift = robot.Max_Lift;
         double k = 10;
         double h = Max_Lift / 2;
@@ -90,17 +98,26 @@ public class Tele extends LinearOpMode {
         RL.setPower(Power);
     }
 
+    private void Turn_Base (){
+        Base_angle = gamepad1.dpad_up    ?   0 :
+                     gamepad1.dpad_left  ? -90 :
+                     gamepad1.dpad_right ?  90 : Base_angle;
+        robot.Turn_Base(Base_angle);
+    }
+
     @Override
     public void runOpMode() {
         Init();
         waitForStart();
         if (opModeIsActive()) {
+            imu.resetYaw();
             robot.PID_timer.reset();
             while (opModeIsActive()) {
                 if (gamepad1.touchpad) imu.resetYaw();
                 Movement();
                 Keep();
                 Lift();
+                Turn_Base();
                 telemetry.addData("yaw", Math.toDegrees(robot.yaw));
                 telemetry.addData("Encoder", B.getCurrentPosition());
                 telemetry.addData("setpoint", setpoint);
