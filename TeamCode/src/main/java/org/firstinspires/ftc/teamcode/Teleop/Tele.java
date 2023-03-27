@@ -23,6 +23,11 @@ public class Tele extends LinearOpMode {
     int Base_angle = 0;
     double yaw, K_pos=0, setpoint=0;
 
+    // Parabola
+    double k = 20;
+    int h = robot.Max_Lift / 2;
+    final double Latus_Rectum = -k / (h * h);
+
     double Parabola;
     int CurrentPosition;
 
@@ -78,17 +83,14 @@ public class Tele extends LinearOpMode {
     }
 
     private void Lift() {
-        CurrentPosition = Math.max(Math.abs(LL.getCurrentPosition()), Math.abs(RL.getCurrentPosition()));
         double Min_Power = 0.5;
-        double Max_Lift = robot.Max_Lift;
-        double k = 20;
-        double h = Max_Lift / 2;
-        double Latus_Rectum = -k / (h * h);
-        Parabola = Parabola <= 0 ? Min_Power : (Latus_Rectum * ((CurrentPosition - h) * (CurrentPosition - h))) + k + Min_Power;
-        double High = CurrentPosition >= Max_Lift ?  0 :
-                      Parabola        >= 1        ?  1 : Parabola;
-        double Low  = CurrentPosition <= 0        ?  0 :
-                      Parabola        >= 1        ? -1 : -Parabola;
+        CurrentPosition = Math.max(-LL.getCurrentPosition(), RL.getCurrentPosition());
+        double ParabolaPosition = CurrentPosition <= 0 ? 0 : Math.min(CurrentPosition, robot.Max_Lift);
+        Parabola = (Latus_Rectum * ((ParabolaPosition - h) * (ParabolaPosition - h))) + k + Min_Power;
+        double High = CurrentPosition >= robot.Max_Lift ?  0 :
+                      Parabola        >= 1              ?  1 : Parabola;
+        double Low  = CurrentPosition <= 0              ?  0 :
+                      Parabola        >= 1              ? -1 : -Parabola;
         double LT = gamepad1.left_trigger;
         double RT = gamepad1.right_trigger;
         double Power = LT >= 0.25 ? High :
@@ -97,7 +99,7 @@ public class Tele extends LinearOpMode {
         RL.setPower(Power);
     }
 
-    private void Turn_Base (){
+    private void Turn_Base() {
         Base_angle = gamepad1.dpad_up    ?   0 :
                      gamepad1.dpad_left  ? -90 :
                      gamepad1.dpad_right ?  90 : Base_angle;

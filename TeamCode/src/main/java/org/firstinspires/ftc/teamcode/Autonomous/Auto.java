@@ -70,37 +70,49 @@ public class Auto extends LinearOpMode {
         while (!isStarted() && !isStopRequested()) {
             telemetry.update();
             int[] ID_TAG_OF_INTEREST = {8, 10, 15};
-            String[] pos = {"Left", "Middle", "Right"};
             ArrayList<AprilTagDetection> currentDetections = aprilTagDetectionPipeline.getLatestDetections();
             if (currentDetections.size() == 0) {
                 telemetry.addLine("Not Found");
                 continue;
             }
-            for (AprilTagDetection tag : currentDetections) {
-                for (int i = 0; i <= 2; i++) {
-                    if (tag.id == ID_TAG_OF_INTEREST[i]) {
-                        telemetry.addLine(String.format("Found %s", pos[i]));
-                        break;
-                    }
+            String[] pos = {"Left", "Middle", "Right"};
+            AprilTagDetection tag = currentDetections.get(0);
+            for (int i = 0; i <= 2; i++) {
+                if (tag.id == ID_TAG_OF_INTEREST[i]) {
+                    telemetry.addLine(String.format("Found %s", pos[i]));
+                    break;
                 }
-                break;
             }
         }
     }
 
-    private void Move(double Setpoint, double X1, double Y1){
-        double[] K_PID = {0.8, 0.3, 0.1};
-        double yaw = -imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);;
-        double X2 = (Math.cos(yaw) * X1) - (Math.sin(yaw) * Y1);
-        double Y2 = (Math.sin(yaw) * X1) + (Math.cos(yaw) * Y1);
-        double PID = robot.PIDControl(Setpoint, yaw, K_PID);
-        // Rotate Condition
-        double R = robot.Plus_Minus(Math.toDegrees(robot.error), 0, 0.45) ? 0 : PID;
-        // Denominator for division to get no more than 1
-        double D = Math.max(Math.abs(X2) + Math.abs(Y2) + Math.abs(R), 1);
-        robot.MovePower((Y2 + X2 + R) / D, (Y2 - X2 - R) / D,
-                        (Y2 - X2 + R) / D,  (Y2 + X2 - R) / D);
-        robot.PID_timer.reset();
+    private void Move(double setpoint, double X1, double Y1, int target) {
+        FL.setTargetPosition(target);
+        FR.setTargetPosition(target);
+        BL.setTargetPosition(target);
+        BR.setTargetPosition(target);
+
+        FL.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        FR.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        BL.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        BR.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+        while (FL.isBusy() && FR.isBusy() && BL.isBusy() && BR.isBusy()) {
+            double yaw = -imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);
+            double[] K_PID = {0.8, 0.2, 0.05};
+            double PID = robot.PIDControl(setpoint, yaw, K_PID);
+            double X2 = (Math.cos(yaw) * X1) - (Math.sin(yaw) * Y1);
+            double Y2 = (Math.sin(yaw) * X1) + (Math.cos(yaw) * Y1);
+            // Rotate Condition
+            double R = robot.Plus_Minus(Math.toDegrees(robot.error), 0, 0.45) ? 0 : PID;
+            // Denominator for division to get no more than 1
+            double D = Math.max(Math.abs(X2) + Math.abs(Y2) + Math.abs(R), 1);
+            robot.MovePower((Y2 + X2 + R) / D, (Y2 - X2 - R) / D,
+                            (Y2 - X2 + R) / D, (Y2 + X2 - R) / D);
+            robot.PID_timer.reset();
+        }
+
+        robot.MovePower(0, 0, 0, 0);
     }
 
     @Override
