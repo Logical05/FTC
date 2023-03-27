@@ -20,7 +20,7 @@ public class Robot {
     /** Variables */
     public final int Max_Lift = 1000;
     public ElapsedTime PID_timer = new ElapsedTime();
-    public double yaw, error, lasterror=0, integral=0;
+    public double error, lasterror=0, integral=0;
 
     public void MovePower(double Front_Left, double Front_Right,
                           double Back_Left,  double Back_Right) {
@@ -56,7 +56,7 @@ public class Robot {
         // Reverse Motors
         FR.setDirection(DcMotorSimple.Direction.REVERSE);
         BR.setDirection(DcMotorSimple.Direction.REVERSE);
-        RL.setDirection(DcMotorSimple.Direction.REVERSE);
+        LL.setDirection(DcMotorSimple.Direction.REVERSE);
         // setMode Motors
         FL.setMode(MoveMode);
         FR.setMode(MoveMode);
@@ -65,9 +65,9 @@ public class Robot {
         B .setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         B .setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         LL.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        LL.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        LL.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         RL.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        RL.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        RL.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         // SetBehavior Motors
         FL.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         FR.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -104,12 +104,11 @@ public class Robot {
         int c = (angle * cpr)/ 360;  // Encoder counts
         B.setTargetPosition(c);
         B.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        B.setPower(0.4);
+        B.setPower(0.5);
     }
 
-    public double PIDControl(double setpoint, double[] K_PID){
+    public double PIDControl(double setpoint, double yaw, double[] K_PID){
         double dT = PID_timer.seconds();
-        yaw = -IMU.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);
         error = AngleWrap(setpoint - yaw);
         integral = Plus_Minus(Math.toDegrees(error), 0, 0.45) ? 0 : integral + (error * dT);
         double derivative = (error - lasterror) / dT;

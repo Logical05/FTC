@@ -7,6 +7,7 @@ import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.Servo;
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.teamcode.AprilTagDetectionPipeline;
 import org.firstinspires.ftc.teamcode.Robot;
 import org.openftc.apriltag.AprilTagDetection;
@@ -87,18 +88,18 @@ public class Auto extends LinearOpMode {
         }
     }
 
-    private void Move(double Setpoint, double Pwr_X, double Pwr_Y){
+    private void Move(double Setpoint, double X1, double Y1){
         double[] K_PID = {0.8, 0.3, 0.1};
-        double Beta   = robot.yaw;
-        double Pwr_X2 = (Math.cos(Beta) * Pwr_X) - (Math.sin(Beta) * Pwr_Y);
-        double Pwr_Y2 = (Math.sin(Beta) * Pwr_X) - (Math.cos(Beta) * Pwr_Y);
-        double PID = robot.PIDControl(Setpoint, K_PID);
+        double yaw = -imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);;
+        double X2 = (Math.cos(yaw) * X1) - (Math.sin(yaw) * Y1);
+        double Y2 = (Math.sin(yaw) * X1) + (Math.cos(yaw) * Y1);
+        double PID = robot.PIDControl(Setpoint, yaw, K_PID);
         // Rotate Condition
         double R = robot.Plus_Minus(Math.toDegrees(robot.error), 0, 0.45) ? 0 : PID;
         // Denominator for division to get no more than 1
-        double D = Math.max(Math.abs(Pwr_X2) + Math.abs(Pwr_Y2) + Math.abs(R), 1);
-        robot.MovePower((Pwr_Y2 + Pwr_X2 + R) / D, (Pwr_Y2 - Pwr_X2 - R) / D,
-                        (Pwr_Y2 - Pwr_X2 + R) / D,  (Pwr_Y2 + Pwr_X2 - R) / D);
+        double D = Math.max(Math.abs(X2) + Math.abs(Y2) + Math.abs(R), 1);
+        robot.MovePower((Y2 + X2 + R) / D, (Y2 - X2 - R) / D,
+                        (Y2 - X2 + R) / D,  (Y2 + X2 - R) / D);
         robot.PID_timer.reset();
     }
 

@@ -29,7 +29,7 @@ public class IMUTest extends LinearOpMode {
 //    double Ki = 0.003;
 //    double Kd = 0.003;
     //Radian
-    double Kp = 0.8;
+    double yaw, Kp = 0.8;
     double Ki = 0.3;
     double Kd = 0.1;
     double Kf = 0;
@@ -63,6 +63,7 @@ public class IMUTest extends LinearOpMode {
         if (opModeIsActive()) {
             // Put run blocks here.
             while (opModeIsActive()) {
+                yaw = -imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);
                 IMUcheck();
                 if (gamepad1.touchpad) imu.resetYaw();
             }
@@ -86,7 +87,7 @@ public class IMUTest extends LinearOpMode {
         lastKf = Kf;
         lastsetpoint = setpoint;
 
-        telemetry.addData("yaw", Math.toDegrees(robot.yaw));
+        telemetry.addData("yaw", Math.toDegrees(yaw));
         telemetry.addData("Kp", Kp);
         telemetry.addData("Ki", Ki);
         telemetry.addData("Kd", Kd);
@@ -104,7 +105,7 @@ public class IMUTest extends LinearOpMode {
         double Ly = -gamepad1.left_stick_y;
         double Rx =  gamepad1.right_stick_x;
         double[] K_PID = {Kp, Ki, Kd};
-        double PID = robot.PIDControl(0, K_PID);
+        double PID = robot.PIDControl(0, yaw, K_PID);
         // Rotate Condition
         double R = Math.abs(Rx) > 0 ? Rx :
                 robot.Plus_Minus(Math.toDegrees(robot.error), 0, 0.45) ? 0 : PID;
