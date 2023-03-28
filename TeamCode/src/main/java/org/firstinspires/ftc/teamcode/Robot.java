@@ -15,7 +15,7 @@ public class Robot {
     public DcMotor FL, FR, BL, BR, B, LL, RL;
 
     /** Variables */
-    public final int Max_Lift = 920;
+    public final int Max_Lift = 875;
     public final int Counts_per_TETRIX = 24 * 60;  // 60:1 TETRIX Motor Encoder per revolution
     public final int Counts_per_HD_HEX = 28 * 20;  // 20:1 HD HEX Motor Encoder per revolution
     public final double Wheel_Diameter_Inches = 4;
@@ -121,15 +121,14 @@ public class Robot {
     }
 
     public double PIDControl(double setpoint, double yaw, double[] K_PID){
-        double dT = PID_timer.seconds();
         error = AngleWrap(setpoint - yaw);
-        integral = Plus_Minus(Math.toDegrees(error), 0, 0.45) ? 0 : integral + (error * dT);
-        double derivative = (error - lasterror) / dT;
+        integral = Plus_Minus(Math.toDegrees(error), 0, 0.45) ? 0 : integral + (error * PID_timer.seconds());
+        double derivative = (error - lasterror) / PID_timer.seconds();
         lasterror = error;
+        PID_timer.reset();
         double output = (error * K_PID[0]) + (integral * K_PID[1]) + (derivative * K_PID[2]);
         if (0 < output && output < 0.08) output = 0.08;
         if (-0.08 < output && output < 0) output = 0.08;
-        PID_timer.reset();
         return output;
     }
 }

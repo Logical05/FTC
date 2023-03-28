@@ -1,5 +1,8 @@
 package org.firstinspires.ftc.teamcode.Teleop;
 
+import com.acmerobotics.dashboard.FtcDashboard;
+import com.acmerobotics.dashboard.config.Config;
+import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -9,6 +12,7 @@ import com.qualcomm.robotcore.hardware.Servo;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.teamcode.Robot;
 
+@Config
 @TeleOp(name="TeleOp")
 public class Tele extends LinearOpMode {
     /** Usage External Class */
@@ -28,6 +32,8 @@ public class Tele extends LinearOpMode {
     int h = robot.Max_Lift / 2;
     final double Latus_Rectum = -k / (h * h);
 
+    public static double p=0, i=0, d=0;
+    public static int target=0;
     double Parabola;
     int CurrentPosition;
 
@@ -61,9 +67,10 @@ public class Tele extends LinearOpMode {
                    Ry < -0.75 && Math.abs(Rx) < 0.75 ?  Math.toRadians(180) : setpoint;
         double[] K_PID_move    = {0.6, 0.2, 0.28};
         double[] K_PID_notmove = {2, 0.9, 0.14};
+
 //        double[] K_PID = Lx < 0.25 && Ly < 0.25 ? K_PID_move : K_PID_notmove;
-        double[] K_PID = {0.6, 0.2, 0.28};
-        double PID = robot.PIDControl(setpoint, yaw, K_PID);
+        double[] K_PID = {p, i, d};
+        double PID = robot.PIDControl(Math.toRadians(target), yaw, K_PID);
         double X1 = Math.abs(Lx) > 0.25 && Math.abs(Ly) < 0.25 ? Lx : 0;
         double Y1 = Math.abs(Ly) > 0.25 && Math.abs(Lx) < 0.25 ? Ly : 0;
         double X2 = (Math.cos(yaw) * X1) - (Math.sin(yaw) * Y1);
@@ -109,6 +116,7 @@ public class Tele extends LinearOpMode {
     @Override
     public void runOpMode() {
         Init();
+        telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
         waitForStart();
         if (opModeIsActive()) {
             robot.PID_timer.reset();
@@ -124,6 +132,7 @@ public class Tele extends LinearOpMode {
                 telemetry.addData("LL", LL.getCurrentPosition());
                 telemetry.addData("RL", RL.getCurrentPosition());
                 telemetry.addData("Parabola", Parabola);
+                telemetry.addData("target",target);
                 telemetry.update();
             }
         }
