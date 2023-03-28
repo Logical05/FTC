@@ -47,7 +47,7 @@ public class Tele extends LinearOpMode {
 
         // Initialize Robot
         robot.Initialize(imu, DcMotor.RunMode.RUN_WITHOUT_ENCODER, FL, FR, BL, BR, B, LL, RL,
-                0.35, LA, RA, 0, K);
+                0.345, LA, RA, 0, K);
     }
 
     private void Movement(){
@@ -59,9 +59,10 @@ public class Tele extends LinearOpMode {
                    Rx < -0.75 && Math.abs(Ry) < 0.75 ?  Math.toRadians(-90) :
                    Ry >  0.75 && Math.abs(Rx) < 0.75 ?  Math.toRadians(  0) :
                    Ry < -0.75 && Math.abs(Rx) < 0.75 ?  Math.toRadians(180) : setpoint;
-        double[] K_PID_move    = {0.8, 0.2, 0.05};
-        double[] K_PID_notmove = {1.7, 0.3, 0.05};
-        double[] K_PID = Lx < 0.25 && Ly < 0.25 ? K_PID_move : K_PID_notmove;
+        double[] K_PID_move    = {0.6, 0.2, 0.28};
+        double[] K_PID_notmove = {2, 0.9, 0.14};
+//        double[] K_PID = Lx < 0.25 && Ly < 0.25 ? K_PID_move : K_PID_notmove;
+        double[] K_PID = {0.6, 0.2, 0.28};
         double PID = robot.PIDControl(setpoint, yaw, K_PID);
         double X1 = Math.abs(Lx) > 0.25 && Math.abs(Ly) < 0.25 ? Lx : 0;
         double Y1 = Math.abs(Ly) > 0.25 && Math.abs(Lx) < 0.25 ? Ly : 0;
@@ -73,7 +74,6 @@ public class Tele extends LinearOpMode {
         double D = Math.max(Math.abs(X2) + Math.abs(Y2) + Math.abs(R), 1);
         robot.MovePower((Y2 + X2 + R) / D, (Y2 - X2 - R) / D,
                         (Y2 - X2 + R) / D,  (Y2 + X2 - R) / D);
-        robot.PID_timer.reset();
     }
 
     private void Keep() {
@@ -84,7 +84,7 @@ public class Tele extends LinearOpMode {
 
     private void Lift() {
         double Min_Power = 0.5;
-        CurrentPosition = Math.max(-LL.getCurrentPosition(), RL.getCurrentPosition());
+        CurrentPosition = Math.max(LL.getCurrentPosition(), RL.getCurrentPosition());
         double ParabolaPosition = CurrentPosition <= 0 ? 0 : Math.min(CurrentPosition, robot.Max_Lift);
         Parabola = (Latus_Rectum * ((ParabolaPosition - h) * (ParabolaPosition - h))) + k + Min_Power;
         double High = CurrentPosition >= robot.Max_Lift ?  0 :
@@ -111,7 +111,6 @@ public class Tele extends LinearOpMode {
         Init();
         waitForStart();
         if (opModeIsActive()) {
-            imu.resetYaw();
             robot.PID_timer.reset();
             while (opModeIsActive()) {
                 if (gamepad1.touchpad) imu.resetYaw();

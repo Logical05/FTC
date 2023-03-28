@@ -68,6 +68,7 @@ public class Auto extends LinearOpMode {
 
     private void WaitForStart() {
         while (!isStarted() && !isStopRequested()) {
+            telemetry.addData("FL", FL.getCurrentPosition());
             telemetry.update();
             int[] ID_TAG_OF_INTEREST = {8, 10, 15};
             ArrayList<AprilTagDetection> currentDetections = aprilTagDetectionPipeline.getLatestDetections();
@@ -86,16 +87,9 @@ public class Auto extends LinearOpMode {
         }
     }
 
-    private void Move(double setpoint, double X1, double Y1, int target) {
-        FL.setTargetPosition(target);
-        FR.setTargetPosition(target);
-        BL.setTargetPosition(target);
-        BR.setTargetPosition(target);
-
-        FL.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        FR.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        BL.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        BR.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+    private void Move(double setpoint, double X1, double Y1, double Inches) {
+        robot.MoveTargetPosition(Inches);
+        robot.MoveMode(DcMotor.RunMode.RUN_TO_POSITION);
 
         while (FL.isBusy() && FR.isBusy() && BL.isBusy() && BR.isBusy()) {
             double yaw = -imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);
@@ -109,10 +103,11 @@ public class Auto extends LinearOpMode {
             double D = Math.max(Math.abs(X2) + Math.abs(Y2) + Math.abs(R), 1);
             robot.MovePower((Y2 + X2 + R) / D, (Y2 - X2 - R) / D,
                             (Y2 - X2 + R) / D, (Y2 + X2 - R) / D);
-            robot.PID_timer.reset();
         }
 
         robot.MovePower(0, 0, 0, 0);
+        robot.MoveMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        sleep(250);
     }
 
     @Override

@@ -15,7 +15,11 @@ public class Robot {
     public DcMotor FL, FR, BL, BR, B, LL, RL;
 
     /** Variables */
-    public final int Max_Lift = 1000;
+    public final int Max_Lift = 920;
+    public final int Counts_per_TETRIX = 24 * 60;  // 60:1 TETRIX Motor Encoder per revolution
+    public final int Counts_per_HD_HEX = 28 * 20;  // 20:1 HD HEX Motor Encoder per revolution
+    public final double Wheel_Diameter_Inches = 4;
+    public final double Counts_per_Inch = Counts_per_HD_HEX / (Wheel_Diameter_Inches * Math.PI);
     public ElapsedTime PID_timer = new ElapsedTime();
     public double error, lasterror=0, integral=0;
 
@@ -25,6 +29,21 @@ public class Robot {
         FR.setPower(Front_Right);
         BL.setPower(Back_Left);
         BR.setPower(Back_Right);
+    }
+
+    public void MoveMode(DcMotor.RunMode MoveMode) {
+        FL.setMode(MoveMode);
+        FR.setMode(MoveMode);
+        BL.setMode(MoveMode);
+        BR.setMode(MoveMode);
+    }
+
+    public void MoveTargetPosition(double Inches) {
+        int Counts = (int)(Inches * Counts_per_Inch);
+        FL.setTargetPosition(FL.getCurrentPosition() + Counts);
+        FR.setTargetPosition(FR.getCurrentPosition() + Counts);
+        BL.setTargetPosition(BL.getCurrentPosition() + Counts);
+        BR.setTargetPosition(BR.getCurrentPosition() + Counts);
     }
 
     public void Initialize(IMU imu, DcMotor.RunMode MoveMode,
@@ -53,17 +72,15 @@ public class Robot {
         // Reverse Motors
         FR.setDirection(DcMotorSimple.Direction.REVERSE);
         BR.setDirection(DcMotorSimple.Direction.REVERSE);
-        LL.setDirection(DcMotorSimple.Direction.REVERSE);
+        RL.setDirection(DcMotorSimple.Direction.REVERSE);
         // setMode Motors
-        FL.setMode(MoveMode);
-        FR.setMode(MoveMode);
-        BL.setMode(MoveMode);
-        BR.setMode(MoveMode);
+        MoveMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         B .setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        B .setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         LL.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        LL.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         RL.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        MoveMode(MoveMode);
+        B .setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        LL.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         RL.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         // SetBehavior Motors
         FL.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -97,11 +114,10 @@ public class Robot {
     }
 
     public void Turn_Base(int angle) {
-        int cpr = 1440;              // Encoder counts per revolution
-        int c = (angle * cpr)/ 360;  // Encoder counts
-        B.setTargetPosition(c);
+        int Counts = (angle * Counts_per_TETRIX) / 360;
+        B.setTargetPosition(Counts);
         B.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        B.setPower(0.5);
+        B.setPower(1);
     }
 
     public double PIDControl(double setpoint, double yaw, double[] K_PID){
@@ -113,6 +129,7 @@ public class Robot {
         double output = (error * K_PID[0]) + (integral * K_PID[1]) + (derivative * K_PID[2]);
         if (0 < output && output < 0.08) output = 0.08;
         if (-0.08 < output && output < 0) output = 0.08;
+        PID_timer.reset();
         return output;
     }
 }
