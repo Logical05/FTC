@@ -30,7 +30,7 @@ public class Auto extends LinearOpMode {
     AprilTagDetectionPipeline aprilTagDetectionPipeline;
 
     /** Variables */
-
+    double[] CurrentXY = {0, 0};
 
     private void Init(){
         // HardwareMap
@@ -62,7 +62,7 @@ public class Auto extends LinearOpMode {
             public void onOpened() { camera.startStreaming(800,448, OpenCvCameraRotation.UPRIGHT); }
 
             @Override
-            public void onError(int errorCode) { }
+            public void onError(int errorCode) {}
         });
     }
 
@@ -87,18 +87,26 @@ public class Auto extends LinearOpMode {
         }
     }
 
-    private void Move(double setpoint, double X1, double Y1, double Inches) {
+    private void Move(double Power, double Kp, double Ki, double Kd, double TargetX, double TargetY) {
+        double[] K_PID  = {Kp, Ki, Kd};
+        double X        = TargetX - CurrentXY[0];
+        double Y        = TargetY - CurrentXY[1];
+        double X1       = Power * (X / Math.abs(X));
+        double Y1       = Power * (Y / Math.abs(Y));
+        double X_Inches = robot.Tile_Size[0] * Math.abs(X);
+        double Y_Inches = robot.Tile_Size[1] * Math.abs(Y);
+        double Inches   = Math.sqrt((X_Inches * X_Inches) + (Y_Inches * Y_Inches));
+
         robot.MoveTargetPosition(Inches);
         robot.MoveMode(DcMotor.RunMode.RUN_TO_POSITION);
 
-        while (FL.isBusy() && FR.isBusy() && BL.isBusy() && BR.isBusy()) {
+        while (opModeIsActive() && (FL.isBusy() && FR.isBusy() && BL.isBusy() && BR.isBusy())) {
             double yaw = -imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);
-            double[] K_PID = {0.8, 0.2, 0.05};
-            double PID = robot.PIDControl(setpoint, yaw, K_PID);
-            double X2 = (Math.cos(yaw) * X1) - (Math.sin(yaw) * Y1);
-            double Y2 = (Math.sin(yaw) * X1) + (Math.cos(yaw) * Y1);
+            double X2  = (Math.cos(yaw) * X1) - (Math.sin(yaw) * Y1);
+            double Y2  = (Math.sin(yaw) * X1) + (Math.cos(yaw) * Y1);
+            double PID = robot.PIDControl(K_PID, 0, yaw);
             // Rotate Condition
-            double R = robot.Plus_Minus(Math.toDegrees(robot.error), 0, 0.45) ? 0 : PID;
+            double R = robot.Plus_Minus(Math.toDegrees(robot.Error), 0, 0.45) ? 0 : PID;
             // Denominator for division to get no more than 1
             double D = Math.max(Math.abs(X2) + Math.abs(Y2) + Math.abs(R), 1);
             robot.MovePower((Y2 + X2 + R) / D, (Y2 - X2 - R) / D,
@@ -107,6 +115,7 @@ public class Auto extends LinearOpMode {
 
         robot.MovePower(0, 0, 0, 0);
         robot.MoveMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        CurrentXY = new double[]{TargetX, TargetY};
         sleep(250);
     }
 
@@ -115,7 +124,7 @@ public class Auto extends LinearOpMode {
         Init();
         WaitForStart();
         if (opModeIsActive()) {
-
+//            Move(0.25, 0, 0, 0, 0, 1);
         }
     }
 }

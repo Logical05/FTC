@@ -1,18 +1,12 @@
 package org.firstinspires.ftc.teamcode.Teleop;
 
-import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.Servo;
-import com.qualcomm.robotcore.util.ElapsedTime;
 
-import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
-import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
 import org.firstinspires.ftc.teamcode.Robot;
 
 @TeleOp(name = "IMUTest")
@@ -93,7 +87,7 @@ public class IMUTest extends LinearOpMode {
         telemetry.addData("Kd", Kd);
         telemetry.addData("Kf", Kf);
         telemetry.addData("setpoint", Math.toDegrees(setpoint));
-        telemetry.addData("error", Math.toDegrees(robot.error));
+        telemetry.addData("Error", Math.toDegrees(robot.Error));
         telemetry.addLine("Kp : -a +y");
         telemetry.addLine("Ki : -Dpad L +Dpad R");
         telemetry.addLine("Kd : -x +b");
@@ -105,10 +99,10 @@ public class IMUTest extends LinearOpMode {
         double Ly = -gamepad1.left_stick_y;
         double Rx =  gamepad1.right_stick_x;
         double[] K_PID = {Kp, Ki, Kd};
-        double PID = robot.PIDControl(0, yaw, K_PID);
+        double PID = robot.PIDControl( K_PID, 0, yaw);
         // Rotate Condition
         double R = Math.abs(Rx) > 0 ? Rx :
-                robot.Plus_Minus(Math.toDegrees(robot.error), 0, 0.45) ? 0 : PID;
+                robot.Plus_Minus(Math.toDegrees(robot.Error), 0, 0.45) ? 0 : PID;
         // Denominator for division to get no more than 1
         double D = Math.max(Math.abs(Ly) + Math.abs(Lx) + Math.abs(R), 1);
         robot.MovePower((Ly + Lx + R)/ D, (Ly - Lx - R)/ D,

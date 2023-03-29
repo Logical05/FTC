@@ -23,19 +23,18 @@ public class Tele extends LinearOpMode {
     Servo LA, RA, K;
     DcMotor FL, FR, BL, BR, B, LL, RL;
 
+    /** Parabola Variables */
+    final int    h               = robot.Max_Lift / 2;
+    final double k               = 20;
+    final double Latus_Rectum    = -k / (h * h);
+
     /** Variables */
-    int Base_angle = 0;
-    double yaw, K_pos=0, setpoint=0;
-
-    // Parabola
-    double k = 20;
-    int h = robot.Max_Lift / 2;
-    final double Latus_Rectum = -k / (h * h);
-
+    double yaw;
+    public static int Base_angle = 0;
+    public static double K_pos=0, setpoint=0;
     public static double p=0, i=0, d=0;
-    public static int target=0;
+
     double Parabola;
-    int CurrentPosition;
 
     private void Init(){
         // HardwareMap
@@ -54,29 +53,29 @@ public class Tele extends LinearOpMode {
         // Initialize Robot
         robot.Initialize(imu, DcMotor.RunMode.RUN_WITHOUT_ENCODER, FL, FR, BL, BR, B, LL, RL,
                 0.345, LA, RA, 0, K);
+
+        // Usage FTC Dashboard
+        telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
     }
 
     private void Movement(){
-        double Lx   =  gamepad1.left_stick_x;
-        double Ly   = -gamepad1.left_stick_y;
-        double Rx   =  gamepad1.right_stick_x;
-        double Ry   = -gamepad1.right_stick_y;
+        double Lx =  gamepad1.left_stick_x;
+        double Ly = -gamepad1.left_stick_y;
+        double Rx =  gamepad1.right_stick_x;
+        double Ry = -gamepad1.right_stick_y;
         setpoint = Rx >  0.75 && Math.abs(Ry) < 0.75 ?  Math.toRadians( 90) :
                    Rx < -0.75 && Math.abs(Ry) < 0.75 ?  Math.toRadians(-90) :
                    Ry >  0.75 && Math.abs(Rx) < 0.75 ?  Math.toRadians(  0) :
                    Ry < -0.75 && Math.abs(Rx) < 0.75 ?  Math.toRadians(180) : setpoint;
-        double[] K_PID_move    = {0.6, 0.2, 0.28};
-        double[] K_PID_notmove = {2, 0.9, 0.14};
-
-//        double[] K_PID = Lx < 0.25 && Ly < 0.25 ? K_PID_move : K_PID_notmove;
-        double[] K_PID = {p, i, d};
-        double PID = robot.PIDControl(Math.toRadians(target), yaw, K_PID);
-        double X1 = Math.abs(Lx) > 0.25 && Math.abs(Ly) < 0.25 ? Lx : 0;
-        double Y1 = Math.abs(Ly) > 0.25 && Math.abs(Lx) < 0.25 ? Ly : 0;
-        double X2 = (Math.cos(yaw) * X1) - (Math.sin(yaw) * Y1);
-        double Y2 = (Math.sin(yaw) * X1) + (Math.cos(yaw) * Y1);
+        double JoyStickLeft_angle = Math.toDegrees(robot.AngleWrap(Math.atan2(Ly,Lx)));
+        double   X1     = (-45 <= JoyStickLeft_angle && JoyStickLeft_angle <= 45) || (-135 >= JoyStickLeft_angle || JoyStickLeft_angle >= 135) ? Lx : 0;
+        double   Y1     = (45  <  JoyStickLeft_angle && JoyStickLeft_angle < 135) || (-45  >  JoyStickLeft_angle && JoyStickLeft_angle > -135) ? Ly : 0;
+        double   X2     = (Math.cos(yaw) * X1) - (Math.sin(yaw) * Y1);
+        double   Y2     = (Math.sin(yaw) * X1) + (Math.cos(yaw) * Y1);
+        double[] K_PID  = {p, i, d};
+        double   PID    = robot.PIDControl(K_PID, Math.toRadians(setpoint), yaw);
         // Rotate Condition
-        double R = robot.Plus_Minus(Math.toDegrees(robot.error), 0, 0.45) ? 0 : PID;
+        double R = robot.Plus_Minus(Math.toDegrees(robot.Error), 0, 0.45) ? 0 : PID;
         // Denominator for division to get no more than 1
         double D = Math.max(Math.abs(X2) + Math.abs(Y2) + Math.abs(R), 1);
         robot.MovePower((Y2 + X2 + R) / D, (Y2 - X2 - R) / D,
@@ -91,7 +90,7 @@ public class Tele extends LinearOpMode {
 
     private void Lift() {
         double Min_Power = 0.5;
-        CurrentPosition = Math.max(LL.getCurrentPosition(), RL.getCurrentPosition());
+        int CurrentPosition = Math.max(LL.getCurrentPosition(), RL.getCurrentPosition());
         double ParabolaPosition = CurrentPosition <= 0 ? 0 : Math.min(CurrentPosition, robot.Max_Lift);
         Parabola = (Latus_Rectum * ((ParabolaPosition - h) * (ParabolaPosition - h))) + k + Min_Power;
         double High = CurrentPosition >= robot.Max_Lift ?  0 :
@@ -101,7 +100,7 @@ public class Tele extends LinearOpMode {
         double LT = gamepad1.left_trigger;
         double RT = gamepad1.right_trigger;
         double Power = LT >= 0.25 ? High :
-                       RT >= 0.25 ? Low  : 0;
+                       RT >= 0.25 ? Low  : 0.1;
         LL.setPower(Power);
         RL.setPower(Power);
     }
@@ -116,7 +115,6 @@ public class Tele extends LinearOpMode {
     @Override
     public void runOpMode() {
         Init();
-        telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
         waitForStart();
         if (opModeIsActive()) {
             robot.PID_timer.reset();
@@ -128,11 +126,11 @@ public class Tele extends LinearOpMode {
                 Lift();
                 Turn_Base();
                 telemetry.addData("yaw", Math.toDegrees(yaw));
-                telemetry.addData("Encoder", B.getCurrentPosition());
+                telemetry.addData("Base", B.getCurrentPosition());
                 telemetry.addData("LL", LL.getCurrentPosition());
                 telemetry.addData("RL", RL.getCurrentPosition());
                 telemetry.addData("Parabola", Parabola);
-                telemetry.addData("target",target);
+                telemetry.addData("setpoint",setpoint);
                 telemetry.update();
             }
         }

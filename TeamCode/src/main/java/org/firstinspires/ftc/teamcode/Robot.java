@@ -14,14 +14,17 @@ public class Robot {
     public Servo LA, RA, K;
     public DcMotor FL, FR, BL, BR, B, LL, RL;
 
+    /** Motor Variables */
+    public final int    Counts_per_TETRIX       = 24 * 60;  // 60:1 TETRIX Motor Encoder per revolution
+    public final int    Counts_per_HD_HEX       = 28 * 20;  // 20:1 HD HEX Motor Encoder per revolution
+    public final double Wheel_Diameter_Inches   = 4;
+    public final double Counts_per_Inch         = Counts_per_HD_HEX / (Wheel_Diameter_Inches * Math.PI);
+
     /** Variables */
-    public final int Max_Lift = 875;
-    public final int Counts_per_TETRIX = 24 * 60;  // 60:1 TETRIX Motor Encoder per revolution
-    public final int Counts_per_HD_HEX = 28 * 20;  // 20:1 HD HEX Motor Encoder per revolution
-    public final double Wheel_Diameter_Inches = 4;
-    public final double Counts_per_Inch = Counts_per_HD_HEX / (Wheel_Diameter_Inches * Math.PI);
-    public ElapsedTime PID_timer = new ElapsedTime();
-    public double error, lasterror=0, integral=0;
+    public final int[]  Tile_Size               = {24, 24};  // Width * Length
+    public final int    Max_Lift                = 865;
+    public ElapsedTime  PID_timer               = new ElapsedTime();
+    public double Error=0, Integral=0, Derivative=0, LastError=0;
 
     public void MovePower(double Front_Left, double Front_Right,
                           double Back_Left,  double Back_Right) {
@@ -90,7 +93,7 @@ public class Robot {
         B .setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         LL.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         RL.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        // SetPower
+        // SetPower Motors
         MovePower(0, 0, 0, 0);
         B .setPower(0);
         LL.setPower(0);
@@ -103,6 +106,7 @@ public class Robot {
         RA.setPosition(Arm_pos);
         K .setPosition(Keeper_pos);
     }
+
     public boolean Plus_Minus(double input, int check, double range) {
         return check - range < input && input < check + range;
     }
@@ -120,15 +124,13 @@ public class Robot {
         B.setPower(1);
     }
 
-    public double PIDControl(double setpoint, double yaw, double[] K_PID){
-        error = AngleWrap(setpoint - yaw);
-        integral = Plus_Minus(Math.toDegrees(error), 0, 0.45) ? 0 : integral + (error * PID_timer.seconds());
-        double derivative = (error - lasterror) / PID_timer.seconds();
-        lasterror = error;
+    public double PIDControl(double[] K_PID, double setpoint, double yaw){
+        double Dt = PID_timer.seconds();
         PID_timer.reset();
-        double output = (error * K_PID[0]) + (integral * K_PID[1]) + (derivative * K_PID[2]);
-        if (0 < output && output < 0.08) output = 0.08;
-        if (-0.08 < output && output < 0) output = 0.08;
-        return output;
+        Error = AngleWrap(setpoint - yaw);
+        Integral = Plus_Minus(Math.toDegrees(Error), 0, 0.25) ? 0 : Integral + (Error * Dt);
+        Derivative = (Error - LastError) / Dt;
+        LastError = Error;
+        return (Error * K_PID[0]) + (Integral * K_PID[1]) + (Derivative * K_PID[2]);
     }
 }
