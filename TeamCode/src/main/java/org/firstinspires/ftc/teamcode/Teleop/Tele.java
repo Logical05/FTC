@@ -10,13 +10,15 @@ import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.Servo;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.teamcode.Calculate;
 import org.firstinspires.ftc.teamcode.Robot;
 
 @Config
 @TeleOp(name="TeleOp")
 public class Tele extends LinearOpMode {
     /** Usage External Class */
-    Robot robot = new Robot();
+    Robot     robot = new Robot();
+    Calculate calc  = new Calculate();
 
     /** Hardware */
     IMU imu;
@@ -67,15 +69,15 @@ public class Tele extends LinearOpMode {
                    Rx < -0.75 && Math.abs(Ry) < 0.75 ?  Math.toRadians(-90) :
                    Ry >  0.75 && Math.abs(Rx) < 0.75 ?  Math.toRadians(  0) :
                    Ry < -0.75 && Math.abs(Rx) < 0.75 ?  Math.toRadians(180) : setpoint;
-        double JoyStickLeft_angle = Math.toDegrees(robot.AngleWrap(Math.atan2(Ly,Lx)));
+        double JoyStickLeft_angle = Math.toDegrees(calc.AngleWrap(Math.atan2(Ly,Lx)));
         double   X1     = (-45 <= JoyStickLeft_angle && JoyStickLeft_angle <= 45) || (-135 >= JoyStickLeft_angle || JoyStickLeft_angle >= 135) ? Lx : 0;
         double   Y1     = (45  <  JoyStickLeft_angle && JoyStickLeft_angle < 135) || (-45  >  JoyStickLeft_angle && JoyStickLeft_angle > -135) ? Ly : 0;
         double   X2     = (Math.cos(yaw) * X1) - (Math.sin(yaw) * Y1);
         double   Y2     = (Math.sin(yaw) * X1) + (Math.cos(yaw) * Y1);
         double[] K_PID  = {p, i, d};
-        double   PID    = robot.PIDControl(K_PID, Math.toRadians(setpoint), yaw);
+        double   PID    = calc.PIDControl(K_PID, Math.toRadians(setpoint), yaw);
         // Rotate Condition
-        double R = robot.Plus_Minus(Math.toDegrees(robot.Error), 0, 0.45) ? 0 : PID;
+        double R = calc.Plus_Minus(Math.toDegrees(calc.Error), 0, 0.25) ? 0 : PID;
         // Denominator for division to get no more than 1
         double D = Math.max(Math.abs(X2) + Math.abs(Y2) + Math.abs(R), 1);
         robot.MovePower((Y2 + X2 + R) / D, (Y2 - X2 - R) / D,
@@ -117,7 +119,6 @@ public class Tele extends LinearOpMode {
         Init();
         waitForStart();
         if (opModeIsActive()) {
-            robot.PID_timer.reset();
             while (opModeIsActive()) {
                 if (gamepad1.touchpad) imu.resetYaw();
                 yaw = -imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);

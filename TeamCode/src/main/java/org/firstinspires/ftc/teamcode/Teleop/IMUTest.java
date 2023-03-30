@@ -7,11 +7,13 @@ import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.Servo;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.teamcode.Calculate;
 import org.firstinspires.ftc.teamcode.Robot;
 
 @TeleOp(name = "IMUTest")
 public class IMUTest extends LinearOpMode {
-    Robot robot = new Robot();
+    Robot     robot = new Robot();
+    Calculate calc  = new Calculate();
     IMU imu;
     Servo LA, RA, K;
     DcMotor FL, FR, BL, BR, B, LL, RL;
@@ -69,7 +71,7 @@ public class IMUTest extends LinearOpMode {
         Ki = gamepad1.dpad_left ? Ki - plusminus : (gamepad1.dpad_right ? Ki + plusminus : Ki);
         Kd = gamepad1.x ? Kd - plusminus : (gamepad1.b ? Kd + plusminus : Kd);
         Kf = gamepad1.left_bumper ? Kf - plusminus : (gamepad1.right_bumper ? Kf + plusminus : Kf);
-        setpoint = robot.AngleWrap(gamepad1.left_trigger > 0 ? setpoint - 1E-2 : (gamepad1.right_trigger > 0 ? setpoint + 1E-2 : setpoint));
+        setpoint = calc.AngleWrap(gamepad1.left_trigger > 0 ? setpoint - 1E-2 : (gamepad1.right_trigger > 0 ? setpoint + 1E-2 : setpoint));
 
         if(Kp != lastKp || Ki != lastKi || Kd != lastKd || Kf != lastKf || setpoint != lastsetpoint) sleep(250);
 
@@ -87,7 +89,7 @@ public class IMUTest extends LinearOpMode {
         telemetry.addData("Kd", Kd);
         telemetry.addData("Kf", Kf);
         telemetry.addData("setpoint", Math.toDegrees(setpoint));
-        telemetry.addData("Error", Math.toDegrees(robot.Error));
+        telemetry.addData("Error", Math.toDegrees(calc.Error));
         telemetry.addLine("Kp : -a +y");
         telemetry.addLine("Ki : -Dpad L +Dpad R");
         telemetry.addLine("Kd : -x +b");
@@ -99,15 +101,14 @@ public class IMUTest extends LinearOpMode {
         double Ly = -gamepad1.left_stick_y;
         double Rx =  gamepad1.right_stick_x;
         double[] K_PID = {Kp, Ki, Kd};
-        double PID = robot.PIDControl( K_PID, 0, yaw);
+        double PID = calc.PIDControl( K_PID, 0, yaw);
         // Rotate Condition
         double R = Math.abs(Rx) > 0 ? Rx :
-                robot.Plus_Minus(Math.toDegrees(robot.Error), 0, 0.45) ? 0 : PID;
+                calc.Plus_Minus(Math.toDegrees(calc.Error), 0, 0.45) ? 0 : PID;
         // Denominator for division to get no more than 1
         double D = Math.max(Math.abs(Ly) + Math.abs(Lx) + Math.abs(R), 1);
         robot.MovePower((Ly + Lx + R)/ D, (Ly - Lx - R)/ D,
                 (Ly - Lx + R)/ D,  (Ly + Lx - R)/ D);
-        robot.PID_timer.reset();
     }
 
 }

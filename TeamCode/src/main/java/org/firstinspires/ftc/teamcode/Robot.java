@@ -6,7 +6,6 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.Servo;
-import com.qualcomm.robotcore.util.ElapsedTime;
 
 public class Robot {
     /** Hardware */
@@ -21,10 +20,7 @@ public class Robot {
     public final double Counts_per_Inch         = Counts_per_HD_HEX / (Wheel_Diameter_Inches * Math.PI);
 
     /** Variables */
-    public final int[]  Tile_Size               = {24, 24};  // Width * Length
     public final int    Max_Lift                = 865;
-    public ElapsedTime  PID_timer               = new ElapsedTime();
-    public double Error=0, Integral=0, Derivative=0, LastError=0;
 
     public void MovePower(double Front_Left, double Front_Right,
                           double Back_Left,  double Back_Right) {
@@ -107,30 +103,10 @@ public class Robot {
         K .setPosition(Keeper_pos);
     }
 
-    public boolean Plus_Minus(double input, int check, double range) {
-        return check - range < input && input < check + range;
-    }
-
-    public double AngleWrap(double radians) {
-        if (radians > Math.PI)  radians -= 2 * Math.PI;
-        if (radians < -Math.PI) radians += 2 * Math.PI;
-        return radians;
-    }
-
     public void Turn_Base(int angle) {
         int Counts = (angle * Counts_per_TETRIX) / 360;
         B.setTargetPosition(Counts);
         B.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         B.setPower(1);
-    }
-
-    public double PIDControl(double[] K_PID, double setpoint, double yaw){
-        double Dt = PID_timer.seconds();
-        PID_timer.reset();
-        Error = AngleWrap(setpoint - yaw);
-        Integral = Plus_Minus(Math.toDegrees(Error), 0, 0.25) ? 0 : Integral + (Error * Dt);
-        Derivative = (Error - LastError) / Dt;
-        LastError = Error;
-        return (Error * K_PID[0]) + (Integral * K_PID[1]) + (Derivative * K_PID[2]);
     }
 }
