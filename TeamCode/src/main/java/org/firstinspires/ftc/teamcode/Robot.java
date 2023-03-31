@@ -8,6 +8,9 @@ import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.Servo;
 
 public class Robot {
+    /** Usage External Class */
+    Controller Base_pid = new Controller(0, 0, 0);
+
     /** Hardware */
     public IMU IMU;
     public Servo LA, RA, K;
@@ -20,7 +23,11 @@ public class Robot {
     public final double Counts_per_Inch         = Counts_per_HD_HEX / (Wheel_Diameter_Inches * Math.PI);
 
     /** Variables */
-    public final int    Max_Lift                = 865;
+    public final int    Max_Lift                = 875;
+    public final int    High_Junction           = 855;
+    public final int    Medium_Junction         = 615;
+    public final int    Low_Junction            = 370;
+    public final int    Ground_Junction         = 75;
 
     public void MovePower(double Front_Left, double Front_Right,
                           double Back_Left,  double Back_Right) {
@@ -39,10 +46,18 @@ public class Robot {
 
     public void MoveTargetPosition(double Inches) {
         int Counts = (int)(Inches * Counts_per_Inch);
-        FL.setTargetPosition(FL.getCurrentPosition() + Counts);
+        FL.setTargetPosition(FL.getCurrentPosition( ) + Counts);
         FR.setTargetPosition(FR.getCurrentPosition() + Counts);
         BL.setTargetPosition(BL.getCurrentPosition() + Counts);
         BR.setTargetPosition(BR.getCurrentPosition() + Counts);
+    }
+
+    public boolean Turn_Base(int angle, double kP, double kI, double kD) {
+        Base_pid.setPID(kP, kI, kD);
+        int Counts = (angle * Counts_per_TETRIX) / 360;
+        double Power = Base_pid.Calculate(Counts - B.getCurrentPosition());
+        B.setPower(Power);
+        return !Base_pid.atSetpoint();
     }
 
     public void Initialize(IMU imu, DcMotor.RunMode MoveMode,
@@ -53,16 +68,16 @@ public class Robot {
                            double Keeper_pos, Servo Keeper) {
         // Add Variable
         IMU = imu;
-        FL = Front_Left;
-        FR = Front_Right;
-        BL = Back_Left;
-        BR = Back_Right;
-        B  = Base;
-        LL = Left_Lift;
-        RL = Right_Lift;
-        LA = Left_Arm;
-        RA = Right_Arm;
-        K  = Keeper;
+        FL  = Front_Left;
+        FR  = Front_Right;
+        BL  = Back_Left;
+        BR  = Back_Right;
+        B   = Base;
+        LL  = Left_Lift;
+        RL  = Right_Lift;
+        LA  = Left_Arm;
+        RA  = Right_Arm;
+        K   = Keeper;
 
         // Initialize IMU
         IMU.initialize(new IMU.Parameters(new RevHubOrientationOnRobot(RevHubOrientationOnRobot.LogoFacingDirection.FORWARD,
@@ -73,12 +88,12 @@ public class Robot {
         BR.setDirection(DcMotorSimple.Direction.REVERSE);
         RL.setDirection(DcMotorSimple.Direction.REVERSE);
         // setMode Motors
-        MoveMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        MoveMode  (DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         B .setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         LL.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         RL.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        MoveMode(MoveMode);
-        B .setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        MoveMode  (MoveMode);
+        B .setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         LL.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         RL.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         // SetBehavior Motors
@@ -101,12 +116,5 @@ public class Robot {
         LA.setPosition(Arm_pos);
         RA.setPosition(Arm_pos);
         K .setPosition(Keeper_pos);
-    }
-
-    public void Turn_Base(int angle) {
-        int Counts = (angle * Counts_per_TETRIX) / 360;
-        B.setTargetPosition(Counts);
-        B.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        B.setPower(1);
     }
 }

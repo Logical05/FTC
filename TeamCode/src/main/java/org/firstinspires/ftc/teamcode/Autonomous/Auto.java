@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode.Autonomous;
 
+import static org.firstinspires.ftc.teamcode.Utilize.atTargetRange;
+
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -9,7 +11,7 @@ import com.qualcomm.robotcore.hardware.Servo;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.teamcode.AprilTag.AprilTagDetectionPipeline;
-import org.firstinspires.ftc.teamcode.Calculate;
+import org.firstinspires.ftc.teamcode.Controller;
 import org.firstinspires.ftc.teamcode.Robot;
 import org.openftc.apriltag.AprilTagDetection;
 import org.openftc.easyopencv.OpenCvCamera;
@@ -21,8 +23,9 @@ import java.util.ArrayList;
 @Autonomous(name = "Autonomous")
 public class Auto extends LinearOpMode {
     /** Usage External Class */
-    Robot     robot = new Robot();
-    Calculate calc  = new Calculate();
+    Robot   robot = new Robot();
+    Controller pid = new Controller(0, 0, 0);
+
     /** Hardware */
     IMU imu;
     Servo LA, RA, K;
@@ -93,8 +96,8 @@ public class Auto extends LinearOpMode {
         double[] K_PID  = {Kp, Ki, Kd};
         double X        = TargetX - CurrentXY[0];
         double Y        = TargetY - CurrentXY[1];
-        double X1       = Power * (X / Math.abs(X));
-        double Y1       = Power * (Y / Math.abs(Y));
+        double X1       = Power * Math.signum(X);
+        double Y1       = Power * Math.signum(Y);
         double X_Inches = Tile_Size[0] * Math.abs(X);
         double Y_Inches = Tile_Size[1] * Math.abs(Y);
         double Inches   = Math.sqrt((X_Inches * X_Inches) + (Y_Inches * Y_Inches));
@@ -106,9 +109,9 @@ public class Auto extends LinearOpMode {
             double yaw = -imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);
             double X2  = (Math.cos(yaw) * X1) - (Math.sin(yaw) * Y1);
             double Y2  = (Math.sin(yaw) * X1) + (Math.cos(yaw) * Y1);
-            double PID = calc.PIDControl(K_PID, 0, yaw);
+            double PID = pid.Calculate(0 - yaw);
             // Rotate Condition
-            double R = calc.Plus_Minus(Math.toDegrees(calc.Error), 0, 0.45) ? 0 : PID;
+            double R = atTargetRange(Math.toDegrees(pid.getError()), 0, 0.25) ? 0 : PID;
             // Denominator for division to get no more than 1
             double D = Math.max(Math.abs(X2) + Math.abs(Y2) + Math.abs(R), 1);
             robot.MovePower((Y2 + X2 + R) / D, (Y2 - X2 - R) / D,

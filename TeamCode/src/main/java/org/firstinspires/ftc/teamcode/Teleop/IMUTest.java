@@ -7,13 +7,13 @@ import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.Servo;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-import org.firstinspires.ftc.teamcode.Calculate;
+import org.firstinspires.ftc.teamcode.Utilize;
 import org.firstinspires.ftc.teamcode.Robot;
 
 @TeleOp(name = "IMUTest")
 public class IMUTest extends LinearOpMode {
     Robot     robot = new Robot();
-    Calculate calc  = new Calculate();
+    Utilize calc  = new Utilize();
     IMU imu;
     Servo LA, RA, K;
     DcMotor FL, FR, BL, BR, B, LL, RL;
@@ -89,7 +89,7 @@ public class IMUTest extends LinearOpMode {
         telemetry.addData("Kd", Kd);
         telemetry.addData("Kf", Kf);
         telemetry.addData("setpoint", Math.toDegrees(setpoint));
-        telemetry.addData("Error", Math.toDegrees(calc.Error));
+//        telemetry.addData("Error", Math.toDegrees(calc.Error));
         telemetry.addLine("Kp : -a +y");
         telemetry.addLine("Ki : -Dpad L +Dpad R");
         telemetry.addLine("Kd : -x +b");
@@ -101,14 +101,14 @@ public class IMUTest extends LinearOpMode {
         double Ly = -gamepad1.left_stick_y;
         double Rx =  gamepad1.right_stick_x;
         double[] K_PID = {Kp, Ki, Kd};
-        double PID = calc.PIDControl( K_PID, 0, yaw);
+//        double PID = calc.PIDControl( K_PID, 0, yaw);
         // Rotate Condition
-        double R = Math.abs(Rx) > 0 ? Rx :
-                calc.Plus_Minus(Math.toDegrees(calc.Error), 0, 0.45) ? 0 : PID;
+//        double R = Math.abs(Rx) > 0 ? Rx :
+//                calc.Plus_Minus(Math.toDegrees(calc.Error), 0, 0.45) ? 0 : PID;
         // Denominator for division to get no more than 1
-        double D = Math.max(Math.abs(Ly) + Math.abs(Lx) + Math.abs(R), 1);
-        robot.MovePower((Ly + Lx + R)/ D, (Ly - Lx - R)/ D,
-                (Ly - Lx + R)/ D,  (Ly + Lx - R)/ D);
+//        double D = Math.max(Math.abs(Ly) + Math.abs(Lx) + Math.abs(R), 1);
+//        robot.MovePower((Ly + Lx + R)/ D, (Ly - Lx - R)/ D,
+//                (Ly - Lx + R)/ D,  (Ly + Lx - R)/ D);
     }
 
 }
