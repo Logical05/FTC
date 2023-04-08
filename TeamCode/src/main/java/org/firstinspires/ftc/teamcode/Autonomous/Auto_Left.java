@@ -14,13 +14,11 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.PIDCoefficients;
 import com.qualcomm.robotcore.hardware.Servo;
-import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.teamcode.AprilTag.AprilTagDetectionPipeline;
 import org.firstinspires.ftc.teamcode.Controller;
-import org.firstinspires.ftc.teamcode.R;
 import org.firstinspires.ftc.teamcode.Robot;
 import org.openftc.apriltag.AprilTagDetection;
 import org.openftc.easyopencv.OpenCvCamera;
@@ -28,11 +26,10 @@ import org.openftc.easyopencv.OpenCvCameraFactory;
 import org.openftc.easyopencv.OpenCvCameraRotation;
 
 import java.util.ArrayList;
-import java.util.Objects;
 
 @Config
-@Autonomous(name = "Autonomous")
-public class Auto extends LinearOpMode {
+@Autonomous(name = "Auto_Left")
+public class Auto_Left extends LinearOpMode {
     /** PID Variables */
     public static double R_Kp=1.6, R_Ki=0.085, R_Kd=0.09;
 
@@ -48,13 +45,12 @@ public class Auto extends LinearOpMode {
     AprilTagDetectionPipeline aprilTagDetectionPipeline;
 
     /** Variables */
-    double yaw;
-    double Heading=0;
-    double[]       CurrentXY = {1.46305914893617, 0.3660998492209};
-    final double[] Tile_Size = {23.5, 23.5};  // Width * Length
-    public static double K_pos=0, Arm_pos=0;
-    int[] ConeLift_Level = {150, 105, 80, 30, 0, 0};
-    int Base_ErrorTolerance = 3;
+    int            Base_ErrorTolerance = 1;
+    int            Tag_ID              = 0;
+    int[]          ConeLift_Level      = {90, 65, 55, 30, 0, 0};
+    double[]       CurrentXY           = {1.47068085106383, 0.3660998492209};
+    final double[] Tile_Size           = {23.5, 23.5};  // Width * Length
+    double yaw, Heading=0, K_pos=0, Arm_pos=0;
 
     private void Init(){
         // HardwareMap
@@ -72,6 +68,10 @@ public class Auto extends LinearOpMode {
         K   = hardwareMap.get(Servo.class,   "Keeper");
 
         // Initialize Robot
+        B  .setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        LL .setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        ML .setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        RL .setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         robot.Initialize(imu, DcMotor.RunMode.RUN_WITHOUT_ENCODER, FL, FR, BL, BR, B, LL, ML, RL,
                 Arm_pos, LA, RA, K_pos, K);
         imu.resetYaw();
@@ -106,17 +106,19 @@ public class Auto extends LinearOpMode {
             B.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
             telemetry.update();
-            int[] ID_TAG_OF_INTEREST = {8, 10, 15};
             ArrayList<AprilTagDetection> currentDetections = aprilTagDetectionPipeline.getLatestDetections();
             if (currentDetections.size() == 0) {
                 telemetry.addLine("Not Found");
                 continue;
             }
+            int[] ID_TAG_OF_INTEREST = {8, 10, 15};
             String[] pos = {"Left", "Middle", "Right"};
             AprilTagDetection tag = currentDetections.get(0);
             for (int i = 0; i <= 2; i++) {
                 if (tag.id == ID_TAG_OF_INTEREST[i]) {
+                    Tag_ID = ID_TAG_OF_INTEREST[i];
                     telemetry.addLine(String.format("Found %s", pos[i]));
+                    telemetry.addData("Tag_ID", Tag_ID);
                     break;
                 }
             }
@@ -131,10 +133,13 @@ public class Auto extends LinearOpMode {
         sleep((long) (stopSecond * 1000));
     }
 
-    private void Lift(int height) {
+    private boolean Lift(int height) {
         int CurrentPosition = Math.max(LL.getCurrentPosition(), Math.max(ML.getCurrentPosition(), RL.getCurrentPosition()));
-        double Lift_Power = (atTargetRange(CurrentPosition, height, 8) ? 0 : (CurrentPosition < height ? 1 : -0.75));
+        double Lift_Power = atTargetRange(CurrentPosition, height, 8) ?    0 :
+                                          CurrentPosition < height           ?    1 :
+                                          CurrentPosition - 25 < height      ? -0.3 : -0.75;
         robot.LiftPower(Lift_Power);
+        return Lift_Power == 0;
     }
 
     private void Move(double power, double Kp, double Ki, double Kd, double targetX, double targetY, double stopSecond,
@@ -157,6 +162,8 @@ public class Auto extends LinearOpMode {
         double FL_BR_In = Y2_In + X2_In;
         double FR_BL_In = Y2_In - X2_In;
         boolean Base_atSetpoint = false;
+        boolean Lift_atTarget   = false;
+        boolean MoveisBusy      = true;
 
         PIDCoefficients pid = new PIDCoefficients(Kp, Ki, Kd);
         FL.setPIDCoefficients(DcMotor.RunMode.RUN_TO_POSITION, pid);
@@ -167,43 +174,24 @@ public class Auto extends LinearOpMode {
         robot.MoveTargetPosition(FL_BR_In, FR_BL_In, FR_BL_In, FL_BR_In);
         robot.MoveMode(DcMotor.RunMode.RUN_TO_POSITION);
 
-        while (opModeIsActive() && robot.MoveisBusy()) {
-            yaw = -imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);
-            double X2  = (Math.cos(Heading) * X1) - (Math.sin(Heading) * Y1);
-            double Y2  = (Math.sin(Heading) * X1) + (Math.cos(Heading) * Y1);
-            // Rotate
-            double R = pid_R.Calculate(AngleWrap(Heading - yaw));
-//            double R =0;
-            // Denominator for division to get no more than 1
-            double D = Math.max(Math.abs(X2) + Math.abs(Y2) + Math.abs(R), 1);
-            robot.MovePower((Y2 + X2 + R) / D, (Y2 - X2 - R) / D,
-                            (Y2 - X2 + R) / D,  (Y2 + X2 - R) / D);
+        while (opModeIsActive() && (MoveisBusy || !Lift_atTarget)) {
+//            if (MoveisBusy) {
+                yaw = -imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);
+                double X2 = (Math.cos(Heading) * X1) - (Math.sin(Heading) * Y1);
+                double Y2 = (Math.sin(Heading) * X1) + (Math.cos(Heading) * Y1);
+                // Rotate
+                double R = pid_R.Calculate(AngleWrap(Heading - yaw));
+                // Denominator for division to get no more than 1
+                double D = Math.max(Math.abs(X2) + Math.abs(Y2) + Math.abs(R), 1);
+                robot.MovePower((Y2 + X2 + R) / D, (Y2 - X2 - R) / D,
+                        (Y2 - X2 + R) / D, (Y2 + X2 - R) / D);
+                MoveisBusy = robot.MoveisBusy();
+//            } else {
+//                robot.MovePower(0, 0, 0, 0);
+//                robot.MoveMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+//            }
 
-//            telemetry.addData("X",X);
-//            telemetry.addData("Y",Y);
-//            telemetry.addData("X_Power",X_Power);
-//            telemetry.addData("Y_Power",Y_Power);
-//            telemetry.addData("X1",X1);
-//            telemetry.addData("Y1",Y1);
-//            telemetry.addData("X1_In",X1_In);
-//            telemetry.addData("Y1_In",Y1_In);
-//            telemetry.addData("X2_In",X2_In);
-//            telemetry.addData("Y2_In",Y2_In);
-//            telemetry.addData("X_Inches",X_Inches);
-//            telemetry.addData("Y_Inches",Y_Inches);
-//            telemetry.addData("FL_BR_In",FL_BR_In);
-//            telemetry.addData("FR_BL_In",FR_BL_In);
-//            telemetry.addData("FL", ((int) (FL_BR_In * robot.Counts_per_Inch)));
-//            telemetry.addData("FLC", FL.getCurrentPosition());
-//            telemetry.addData("FR", ((int) (FR_BL_In * robot.Counts_per_Inch)));
-//            telemetry.addData("FRC", FR.getCurrentPosition());
-//            telemetry.addData("BL", ((int) (FR_BL_In * robot.Counts_per_Inch)));
-//            telemetry.addData("BLC", BL.getCurrentPosition());
-//            telemetry.addData("BR", ((int) (FL_BR_In * robot.Counts_per_Inch)));
-//            telemetry.addData("BRC", BR.getCurrentPosition());
-//            telemetry.update();
-
-            Lift(Height);
+            Lift_atTarget = Lift(Height);
             K.setPosition(K_pos);
             robot.setArmPosition(Arm_pos);
             if (!Base_atSetpoint) {
@@ -222,10 +210,14 @@ public class Auto extends LinearOpMode {
         boolean Base_atSetpoint = false;
         while (opModeIsActive()) {
             yaw = -imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);
-            double power = 0.4;
+            double maxpower = 0.6;
+            double minpower = 0.2;
             double error = AngleWrap(Turn_angle - yaw);
-            double R = error == 0 ? 0 : (error < 0 ? -power : power);
-            if (Math.abs(error) == (Math.toRadians(0))) break;
+            double R = atTargetRange(error, 0, 0.05)        ? 0 :
+                       atTargetRange(error, 0, Math.toRadians(30)) ?
+                                    (error < 0 ? -minpower : minpower)   :
+                                    (error < 0 ? -maxpower : maxpower);
+            if (atTargetRange(error, 0, 0.05)) break;
             robot.MovePower(R, -R, R,-R);
 
             Lift(Height);
@@ -244,44 +236,43 @@ public class Auto extends LinearOpMode {
         Init();
         WaitForStart();
         if (opModeIsActive()) {
-            Move(1, 1.6, 0.01, 0, 1.9, 2.59, 0.25, 45, 0, 0, 740);
+            Move(0.6, 3.8, 0.19, 0, 1.8, 2.59, 0.25, 45, 0, 0, 495);
             robot.setArmPosition(0.35);
             sleep(100);
             K.setPosition(0.25);
-            Lift(130);
+            Lift(ConeLift_Level[0]);
             sleep(100);
-            Move(1, 2, 0.085, 0, 1.5, 2.5, 0.25, 45, 0.25, 0.35, 130);
-            Turn(-90, 130, 0, 0.25);
-            Move(1, 2, 0.07, 0, 0.65, 2.5, 0.25, 0, 0.2, 0.35, ConeLift_Level[0]);
-//            for (int i=0; i<=4; i++) {
-                if (0 != 0) Move(1, 1.6, 0.01, 0, 0.65, 2.5, 0.25, 0, 0.2, 0.35, ConeLift_Level[0]);
+            Move(0.5, 4, 0.19, 0, 1.5, 2.57, 0.25, 45, 0.25, 0.35, ConeLift_Level[0]);
+            Turn(-90, ConeLift_Level[0], -7, 0.25);
+            for (int i=0; i<=4; i++) {
+                Move(0.5, 4.75, 0.23, 0, 0.629, 2.57, 0.25, -7, 0.2, 0.35, ConeLift_Level[i]);
                 K.setPosition(0);
                 sleep(400);
-                Move(1, 2, 0.07, 0, 2.125, 2.5, 0.25, 90, 0, 0, robot.High_Junction);
-                robot.setArmPosition(0.55);
-                sleep(300);
-                K.setPosition(0.15);
-                sleep(150);
-                robot.setArmPosition(0);
-                sleep(300);
-//            }
-//            Move(0.75, 0.7, 2.475, 0.3, 0, 0.2, 0.35, 120);
-//            K.setPosition(0);
-//            sleep(500);
-
-//            for (int i=0; i<4; i++) {
-//                Move(0.6, 1.5, 5.5, 0.5, 0, 0, 0, 0);
-//                sleep(1000);
-//                Move(0.6, 1.5, 1.5, 0.5, 0, 0, 0, 0);
-//            }
-
-//            while (opModeIsActive()) {
-//                if (Start) {
-//                    Move(Power, Kp, Ki, Kd, TargetX, TargetY, 0.3, Base_angle, K_pos, Arm_pos, Height);
-//                    Turn(Turn_angle, Height, Base_angle, 0.3);
-//                    Start=false;
-//                }
-//            }
+                Lift(500);
+                sleep(100);
+                Move(0.5, 3.8, 0.19, 0, 1.645, 2.57, 0.25, 135, 0, 0, 500);
+                robot.setArmPosition(0.35);
+                sleep(100);
+                K.setPosition(0.25);
+                Lift(ConeLift_Level[i]);
+                sleep(100);
+            }
+            robot.setArmPosition(0);
+            sleep(100);
+            switch (Tag_ID) {
+                case 8:
+                    Move(1, 4.75, 0.23, 0, 0.5, 2.5, 0.25, 0, 0, 0, 0);
+                    Turn(-180, 0, 0, 0.25);
+                    Move(1, 4.75, 0.23, 0, 0.5, 1.5, 10, 0, 0, 0, 0);
+                case 10:
+                    Move(1, 4.75, 0.23, 0, 1.5, 2.5, 0.25, 0, 0, 0, 0);
+                    Turn(-180, 0, 0, 0.25);
+                    Move(1, 4.75, 0.23, 0, 1.5, 1.5, 10, 0, 0, 0, 0);
+                case 15:
+                    Move(1, 4.75, 0.23, 0, 2.5, 2.5, 0.25, 0, 0, 0, 0);
+                    Turn(-180, 0, 0, 0.25);
+                    Move(1, 4.75, 0.23, 0, 2.5, 1.5, 10, 0, 0, 0, 0);
+            }
         }
     }
 }

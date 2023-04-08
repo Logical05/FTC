@@ -26,11 +26,11 @@ public class Robot {
     public final double Counts_per_Inch       = Gear_20_HD_HEX / (Wheel_Diameter_Inches * Math.PI);
 
     /** Variables */
-    public final int    High_Junction           = 830;
-    public final int    Medium_Junction         = 590;
-    public final int    Low_Junction            = 365;
-    public final int    Ground_Junction         = 75;
-    public final int    Max_Lift                = 860;
+    public final int    High_Junction           = 610;
+    public final int    Medium_Junction         = 440;
+    public final int    Low_Junction            = 235;
+    public final int    Ground_Junction         = 30;
+    public final int    Max_Lift                = 640;
 
     public void LiftPower(double Lift_Power) {
         LL.setPower(Lift_Power);
@@ -109,10 +109,6 @@ public class Robot {
         RL.setDirection(DcMotorSimple.Direction.REVERSE);
         // setMode Motors
         MoveMode  (DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        B .setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        LL.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        ML.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        RL.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         MoveMode  (moveMode);
         B .setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         LL.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
@@ -133,6 +129,9 @@ public class Robot {
         LL.setPower(0);
         ML.setPower(0);
         RL.setPower(0);
+
+//        PIDCoefficients Basepid = new PIDCoefficients(5, 0.5, 0);
+//        B.setPIDCoefficients(DcMotor.RunMode.RUN_TO_POSITION, Basepid);
 
         // Reverse Servo
         RA.setDirection(Servo.Direction.REVERSE);

@@ -20,7 +20,7 @@ import org.firstinspires.ftc.teamcode.Controller;
 import org.firstinspires.ftc.teamcode.Robot;
 
 @Config
-@TeleOp(name="TeleOp")
+@TeleOp(name="Tele")
 public class Tele extends LinearOpMode {
     /** PID Variables */
     public static double R_Kp=1.6, R_Ki=0.01, R_Kd=0.09;
@@ -36,7 +36,7 @@ public class Tele extends LinearOpMode {
 
     /** Variables */
     int Level, CurrentPosition=0;
-    double yaw, K_pos=0.25, Arm_pos=0.345, setpoint=0;
+    double yaw, K_pos=0, Arm_pos=0, setpoint=Math.toRadians(180);
     boolean Base_atSetpoint=true, Lift_isAuto=false, LB_press=false, RB_press=false, ArmUp=false, isKeep=false, LT_press=false, RT_press=false;
     public static int Base_angle = 0;
 
@@ -64,7 +64,7 @@ public class Tele extends LinearOpMode {
     }
 
     private double SpeedLimit(double joystick, double speed){
-        if(CurrentPosition >= robot.Medium_Junction+((robot.High_Junction- robot.Medium_Junction)/2)) Range.clip(joystick, -speed, speed);
+        if(CurrentPosition >= robot.Medium_Junction) Range.clip(joystick, -speed, speed);
         return joystick;
     }
 
@@ -151,7 +151,7 @@ public class Tele extends LinearOpMode {
         Level = Range.clip(Level,0, 4);
         boolean Auto_Condition = !(D_Up) && !(D_Down) && (Lift_isAuto || LT >= 0.25 || RT >= 0.25);
         double Min_Power  = 0;
-        double Auto       = (atTargetRange(CurrentPosition, Levels[Level], 10) ? Min_Power : (CurrentPosition < Levels[Level] ? 1 : -1));
+        double Auto       = (atTargetRange(CurrentPosition, Levels[Level], 10) ? Min_Power : (CurrentPosition < Levels[Level] ? 1 : -0.75));
         double Control    = (D_Up ? (CurrentPosition >= robot.Max_Lift ? 0 : 1) : (D_Down ? (CurrentPosition <= 0 ? 0 : -1) : Min_Power));
         double Lift_Power = Auto_Condition ? Auto : Control;
         Lift_isAuto = Auto_Condition;
