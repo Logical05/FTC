@@ -195,7 +195,7 @@ public class Tele extends LinearOpMode {
             B.setPower(B_Power);
         }
 
-        if (!Base_atSetpoint || CR || SQ || CC || gamepad1.dpad_left || gamepad1.dpad_right) {
+        if (!Base_atSetpoint || CR || SQ || CC) {
             Base_atSetpoint = robot.Turn_Base(Base_angle, 0.65, 1);
             return;
         }
