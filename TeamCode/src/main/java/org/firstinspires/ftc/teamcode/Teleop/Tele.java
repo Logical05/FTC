@@ -190,8 +190,9 @@ public class Tele extends LinearOpMode {
         }
 
         if(D_Left || D_Right){
+            Base_atSetpoint = true;
             B.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-            double B_Power = D_Left ? 0.3 : (D_Right ? -0.3 : 0);
+            double B_Power = D_Left ? 0.5 : (D_Right ? -0.5 : 0);
             B.setPower(B_Power);
         }
 

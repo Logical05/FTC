@@ -175,7 +175,7 @@ public class Tele2Player extends LinearOpMode {
         if(RX  != 0){
             Base_atSetpoint = true;
             B.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-            B.setPower(Range.clip(-RX,-0.3 , 0.3));
+            B.setPower(Range.clip(-RX,-0.5 , 0.5));
         }
 
         if (!Base_atSetpoint || CR || SQ || CI) {
