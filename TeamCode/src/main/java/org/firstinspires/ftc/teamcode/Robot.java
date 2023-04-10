@@ -26,11 +26,13 @@ public class Robot {
     public final double Counts_per_Inch       = Gear_20_HD_HEX / (Wheel_Diameter_Inches * Math.PI);
 
     /** Variables */
-    public final int    High_Junction           = 610;
-    public final int    Medium_Junction         = 440;
-    public final int    Low_Junction            = 235;
-    public final int    Ground_Junction         = 30;
+    public final int    High_Junction           = 615;
+    public final int    Medium_Junction         = 445;
+    public final int    Low_Junction            = 240;
+    public final int    Ground_Junction         = 35;
     public final int    Max_Lift                = 640;
+    public int FL_Target, FR_Target, BL_Target, BR_Target;
+    public int Error_FL=0, Error_FR=0, Error_BL=0, Error_BR=0;
 
     public void LiftPower(double Lift_Power) {
         LL.setPower(Lift_Power);
@@ -59,10 +61,18 @@ public class Robot {
 
     public void MoveTargetPosition(double FL_Inches, double FR_Inches,
                                    double BL_Inches,  double BR_Inches) {
-        FL.setTargetPosition(FL.getCurrentPosition() + ((int) (FL_Inches * Counts_per_Inch)));
-        FR.setTargetPosition(FR.getCurrentPosition() + ((int) (FR_Inches * Counts_per_Inch)));
-        BL.setTargetPosition(BL.getCurrentPosition() + ((int) (BL_Inches * Counts_per_Inch)));
-        BR.setTargetPosition(BR.getCurrentPosition() + ((int) (BR_Inches * Counts_per_Inch)));
+        FL_Target = FL.getCurrentPosition() + ((int) (FL_Inches * Counts_per_Inch));
+        FR_Target = FR.getCurrentPosition() + ((int) (FR_Inches * Counts_per_Inch));
+        BL_Target = BL.getCurrentPosition() + ((int) (BL_Inches * Counts_per_Inch));
+        BR_Target = BR.getCurrentPosition() + ((int) (BR_Inches * Counts_per_Inch));
+//        FL.setTargetPositionTolerance(2);
+//        FR.setTargetPositionTolerance(2);
+//        BL.setTargetPositionTolerance(2);
+//        BR.setTargetPositionTolerance(2);
+        FL.setTargetPosition(FL_Target + Error_FL);
+        FR.setTargetPosition(FR_Target + Error_FR);
+        BL.setTargetPosition(BL_Target + Error_BL);
+        BR.setTargetPosition(BR_Target + Error_BR);
     }
 
     public void setArmPosition(double armPos) {

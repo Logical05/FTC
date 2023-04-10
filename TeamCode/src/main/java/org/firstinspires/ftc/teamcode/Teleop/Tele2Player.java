@@ -3,28 +3,24 @@ package org.firstinspires.ftc.teamcode.Teleop;
 import static org.firstinspires.ftc.teamcode.Utilize.AngleWrap;
 import static org.firstinspires.ftc.teamcode.Utilize.atTargetRange;
 
-import com.qualcomm.robotcore.hardware.DcMotorEx;
-import com.qualcomm.robotcore.util.Range;
-
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
-import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.teamcode.Controller;
 import org.firstinspires.ftc.teamcode.Robot;
-import org.openftc.apriltag.AprilTagDetection;
-
-import java.util.ArrayList;
 
 @Config
-@TeleOp(name="Tele")
-public class Tele extends LinearOpMode {
+@TeleOp(name="Tele2Player")
+public class Tele2Player extends LinearOpMode {
     /** PID Variables */
     public static double R_Kp=1.6, R_Ki=0.01, R_Kd=0.09;
 
@@ -38,9 +34,9 @@ public class Tele extends LinearOpMode {
     DcMotorEx FL, FR, BL, BR, B, LL, ML, RL;
 
     /** Variables */
-    int Level, CurrentPosition=0;
+    int Levels, CurrentPosition=0;
     double yaw, K_pos=0, Arm_pos=0, setpoint=Math.toRadians(180);
-    boolean Base_atSetpoint=true, Lift_isAuto=false, LB_press=false, RB_press=false, ArmUp=true, isKeep=true, LT_press=false, RT_press=false;
+    boolean Base_atSetpoint=true, Lift_isAuto=false, LB_press=false, RB_press=false, ArmUp=true, isKeep=true;
     public static int Base_angle = 0;
 
     private void Init() {
@@ -111,8 +107,8 @@ public class Tele extends LinearOpMode {
     }
 
     private void Keep() {
-        boolean RB = gamepad1.right_bumper;
-        boolean LB = gamepad1.left_bumper;
+        boolean RB = gamepad2.right_bumper;
+        boolean LB = gamepad2.left_bumper;
         LB_press = LB || LB_press;
         RB_press = RB || RB_press;
         if (LB_press && !LB) {
@@ -143,63 +139,50 @@ public class Tele extends LinearOpMode {
     }
 
     private void Lift() {
-        CurrentPosition = Math.max(LL.getCurrentPosition(), Math.max(ML.getCurrentPosition(), RL.getCurrentPosition()));
-        double  LT     = gamepad1.left_trigger;
-        double  RT     = gamepad1.right_trigger;
-        boolean D_Up   = gamepad1.dpad_up;
-        boolean D_Down = gamepad1.dpad_down;
-        int[]   Levels = {0, robot.Ground_Junction, robot.Low_Junction, robot.Medium_Junction, robot.High_Junction};
-        LT_press = LT >= 0.25 || LT_press;
-        RT_press = RT >= 0.25 || RT_press;
-        if (LT_press && (LT < 0.25)) {
-            LT_press = false;
-            Level--;
-        }
-        if (RT_press && (RT < 0.25)) {
-            RT_press = false;
-            Level++;
-        }
-        Level = D_Down || D_Up ? (CurrentPosition >= robot.High_Junction   ? 4 :
-                            CurrentPosition >= robot.Medium_Junction ? 3 :
-                            CurrentPosition >= robot.Low_Junction    ? 2 :
-                            CurrentPosition >= robot.Ground_Junction ? 1 :
-                            CurrentPosition >=                     0 ? 0 : Level) : Level;
-
-        Level = Range.clip(Level,0, 4);
-        boolean Auto_Condition = !(D_Up) && !(D_Down) && (Lift_isAuto || LT >= 0.25 || RT >= 0.25);
+        int CurrentPosition = Math.max(LL.getCurrentPosition(), RL.getCurrentPosition());
+        double  LT = gamepad2.right_trigger;
+        double  RT = gamepad2.left_trigger;
+        boolean TR = gamepad2.triangle;
+        boolean CI = gamepad2.circle;
+        boolean SQ = gamepad2.square;
+        boolean CR = gamepad2.cross;
+        Levels = CR ? robot.Ground_Junction :
+                 CI ? robot.Low_Junction    :
+                 SQ ? robot.Medium_Junction :
+                 TR ? robot.High_Junction   : Levels;
+        boolean Auto_Condition = (LT < 0.25) && (RT < 0.25) && (Lift_isAuto || TR || CI || SQ || CR);
         double Min_Power  = 0;
-        double Auto       = (atTargetRange(CurrentPosition, Levels[Level], 10) ? Min_Power : (CurrentPosition < Levels[Level] ? 1 : -0.75));
-        double Control    = (D_Up ? (CurrentPosition >= robot.Max_Lift ? 0 : 1) : (D_Down ? (CurrentPosition <= 0 ? 0 : -1) : Min_Power));
+        double Auto       = (atTargetRange(CurrentPosition, Levels, 10) ? Min_Power : (CurrentPosition < Levels ? 1 : -0.75));
+        double Control    = (LT >= 0.25 ? (CurrentPosition >= robot.Max_Lift ? 0 : 1) : (RT >= 0.25 ? (CurrentPosition <= 0 ? 0 : -1) : Min_Power));
         double Lift_Power = Auto_Condition ? Auto : Control;
         Lift_isAuto = Auto_Condition;
         robot.LiftPower(Lift_Power);
     }
 
     private void Turn_Base() {
-        boolean CR      = gamepad1.cross;
-        boolean SQ      = gamepad1.square;
-        boolean CC      = gamepad1.circle;
-        boolean D_Left  = gamepad1.dpad_left;
-        boolean D_Right = gamepad1.dpad_right;
+        boolean CR = gamepad1.cross;
+        boolean SQ = gamepad1.square;
+        boolean CI = gamepad1.circle;
+        double   RX = gamepad2.right_stick_x;
         Base_angle = CR    ?   0 :
                      SQ    ?  90 :
-                     CC    ? -90 : Base_angle;
-        if(gamepad1.share) {
+                     CI    ? -90 : Base_angle;
+        if(gamepad2.back) {
             B.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
             B.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         }
 
-        if(D_Left || D_Right){
+        if(RX  != 0){
+            Base_atSetpoint = true;
             B.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-            double B_Power = D_Left ? 0.3 : (D_Right ? -0.3 : 0);
-            B.setPower(B_Power);
+            B.setPower(Range.clip(-RX,-0.3 , 0.3));
         }
 
-        if (!Base_atSetpoint || CR || SQ || CC || gamepad1.dpad_left || gamepad1.dpad_right) {
+        if (!Base_atSetpoint || CR || SQ || CI) {
             Base_atSetpoint = robot.Turn_Base(Base_angle, 0.65, 1);
             return;
         }
-        if (!D_Left && !D_Right) {
+        if(Math.abs(RX) <= 0.1) {
             B.setPower(0);
             B.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         }

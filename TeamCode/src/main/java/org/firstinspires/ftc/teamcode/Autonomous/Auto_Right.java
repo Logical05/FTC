@@ -47,7 +47,7 @@ public class Auto_Right extends LinearOpMode {
     /** Variables */
     int            Base_ErrorTolerance = 1;
     int            Tag_ID              = 0;
-    int[]          ConeLift_Level      = {90, 65, 55, 30, 0, 0};
+    int[]          ConeLift_Level      = {90, 65, 50, 30, 0, 0};
     double[]       CurrentXY           = {-1.47068085106383, 0.3660998492209};
     final double[] Tile_Size           = {23.5, 23.5};  // Width * Length
     double yaw, Heading=0, K_pos=0, Arm_pos=0;
@@ -142,7 +142,7 @@ public class Auto_Right extends LinearOpMode {
         return Lift_Power == 0;
     }
 
-    private void Move(double power, double Kp, double Ki, double Kd, double targetX, double targetY, double stopSecond,
+    private void Move(double power, double Kp, double Ki, double targetX, double targetY, double stopSecond,
                       int Base_angle, double K_pos, double Arm_pos, int Height) {
         yaw = -imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);
         double X        = targetX - CurrentXY[0];
@@ -165,7 +165,7 @@ public class Auto_Right extends LinearOpMode {
         boolean Lift_atTarget   = false;
         boolean MoveisBusy      = true;
 
-        PIDCoefficients pid = new PIDCoefficients(Kp, Ki, Kd);
+        PIDCoefficients pid = new PIDCoefficients(Kp, Ki, 0);
         FL.setPIDCoefficients(DcMotor.RunMode.RUN_TO_POSITION, pid);
         FR.setPIDCoefficients(DcMotor.RunMode.RUN_TO_POSITION, pid);
         BL.setPIDCoefficients(DcMotor.RunMode.RUN_TO_POSITION, pid);
@@ -195,17 +195,22 @@ public class Auto_Right extends LinearOpMode {
             K.setPosition(K_pos);
             robot.setArmPosition(Arm_pos);
             if (!Base_atSetpoint) {
-                Base_atSetpoint = robot.Turn_Base(Base_angle, 0.5, Base_ErrorTolerance);
+                Base_atSetpoint = robot.Turn_Base(Base_angle, 0.75, Base_ErrorTolerance);
                 continue;
             }
             B.setPower(0);
             B.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         }
         Break(stopSecond);
+//        robot.Error_FL = robot.FL_Target - FL.getCurrentPosition();
+//        robot.Error_FR = robot.FR_Target - FR.getCurrentPosition();
+//        robot.Error_BL = robot.BL_Target - BL.getCurrentPosition();
+//        robot.Error_BR = robot.BR_Target - BR.getCurrentPosition();
     }
 
     private void Turn(double Turn_angle, int Height, int Base_angle, double stopSecond) {
         Turn_angle = Math.toRadians(Turn_angle);
+        robot.Error_FL = robot.Error_FR = robot.Error_BL = robot.Error_BR = 0;
         Heading = Turn_angle;
         boolean Base_atSetpoint = false;
         while (opModeIsActive()) {
@@ -222,7 +227,7 @@ public class Auto_Right extends LinearOpMode {
 
             Lift(Height);
             if (!Base_atSetpoint) {
-                Base_atSetpoint = robot.Turn_Base(Base_angle, 0.5, Base_ErrorTolerance);
+                Base_atSetpoint = robot.Turn_Base(Base_angle, 0.75, Base_ErrorTolerance);
                 continue;
             }
             B.setPower(0);
@@ -236,40 +241,48 @@ public class Auto_Right extends LinearOpMode {
         Init();
         WaitForStart();
         if (opModeIsActive()) {
-            Move(0.6, 3.8, 0.19, 0, -1.8, 2.59, 0.25, 45, 0, 0, 495);
+            Move(0.6, 4.75, 0.23, -1.8, 2.59, 0.25, -45, 0, 0, 495);
             robot.setArmPosition(0.35);
             sleep(100);
-            K.setPosition(0.25);
+            K.setPosition(0.34);
             Lift(ConeLift_Level[0]);
             sleep(100);
-            Move(0.5, 4, 0.19, 0, -1.5, 2.57, 0.25, 45, 0.25, 0.35, ConeLift_Level[0]);
-            Turn(90, ConeLift_Level[0], 7, 0.25);
+            Move(0.5, 3.86, 0.19, -1.5, 2.565, 0.25, -45, 0.25, 0.34, ConeLift_Level[0]);
+            Turn(90, ConeLift_Level[0], 5, 0.25);
             for (int i=0; i<=4; i++) {
-                Move(0.5, 4.75, 0.23, 0, -0.629, 2.57, 0.25, 7, 0.2, 0.35, ConeLift_Level[i]);
+                Move(0.5, 4.4, 0.19, -0.629, 2.565, 0.25, 5, 0.2, 0.34, ConeLift_Level[i]);
+                robot.Error_FL = robot.Error_FR = robot.Error_BL = robot.Error_BR = 0;
                 K.setPosition(0);
-                sleep(400);
+                sleep(500);
                 Lift(500);
                 sleep(100);
-                Move(0.5, 3.8, 0.19, 0, -1.645, 2.57, 0.25, -135, 0, 0, 500);
+                Move(0.5, 3.82, 0.19, -1.725, 2.565, 0.25, -125, 0, 0, 500);
+                robot.Error_FL = robot.FL_Target - FL.getCurrentPosition();
+                robot.Error_FR = robot.FR_Target - FR.getCurrentPosition();
+                robot.Error_BL = robot.BL_Target - BL.getCurrentPosition();
+                robot.Error_BR = robot.BR_Target - BR.getCurrentPosition();
                 robot.setArmPosition(0.35);
                 sleep(100);
-                K.setPosition(0.25);
+                K.setPosition(0.34);
                 Lift(ConeLift_Level[i]);
                 sleep(100);
             }
+            telemetry.update();
+            robot.setArmPosition(0);
+            sleep(100);
             switch (Tag_ID) {
                 case 8:
-                    Move(1, 4.75, 0.23, 0, -2.5, 2.5, 0.25, 0, 0, 0, 0);
+                    Move(1, 4.75, 0.23, -2.5, 2.5, 0.25, 0, 0, 0, 0);
                     Turn(180, 0, 0, 0.25);
-                    Move(1, 4.75, 0.23, 0, -2.5, 1.5, 10, 0, 0, 0, 0);
+                    Move(1, 4.75, 0.23, -2.5, 1.5, 10, 0, 0, 0, 0);
                 case 10:
-                    Move(1, 4.75, 0.23, 0, -1.5, 2.5, 0.25, 0, 0, 0, 0);
+                    Move(1, 4.75, 0.23, -1.5, 2.5, 0.25, 0, 0, 0, 0);
                     Turn(180, 0, 0, 0.25);
-                    Move(1, 4.75, 0.23, 0, -1.5, 1.5, 10, 0, 0, 0, 0);
+                    Move(1, 4.75, 0.23, -1.5, 1.5, 10, 0, 0, 0, 0);
                 case 15:
-                    Move(1, 4.75, 0.23, 0, -0.5, 2.5, 0.25, 0, 0, 0, 0);
+                    Move(1, 4.75, 0.23, -0.5, 2.5, 0.25, 0, 0, 0, 0);
                     Turn(180, 0, 0, 0.25);
-                    Move(1, 4.75, 0.23, 0, -0.5, 1.5, 10, 0, 0, 0, 0);
+                    Move(1, 4.75, 0.23, -0.5, 1.5, 10, 0, 0, 0, 0);
             }
         }
     }
