@@ -148,7 +148,7 @@ public class Tele extends LinearOpMode {
         double  RT     = gamepad1.right_trigger;
         boolean D_Up   = gamepad1.dpad_up;
         boolean D_Down = gamepad1.dpad_down;
-        int[]   Levels = {0, robot.Ground_Junction, robot.Low_Junction, robot.Medium_Junction, robot.High_Junction};
+        int[]   Levels = {-50, robot.Ground_Junction, robot.Low_Junction, robot.Medium_Junction, robot.High_Junction};
         LT_press = LT >= 0.25 || LT_press;
         RT_press = RT >= 0.25 || RT_press;
         if (LT_press && (LT < 0.25)) {
@@ -167,9 +167,10 @@ public class Tele extends LinearOpMode {
 
         Level = Range.clip(Level,0, 4);
         boolean Auto_Condition = !(D_Up) && !(D_Down) && (Lift_isAuto || LT >= 0.25 || RT >= 0.25);
-        double Min_Power  = 0;
+        double Min_Power  = 0.05;
         double Auto       = (atTargetRange(CurrentPosition, Levels[Level], 10) ? Min_Power : (CurrentPosition < Levels[Level] ? 1 : -0.75));
-        double Control    = (D_Up ? (CurrentPosition >= robot.Max_Lift ? 0 : 1) : (D_Down ? (CurrentPosition <= 0 ? 0 : -1) : Min_Power));
+//        double Control    = (D_Up ? (CurrentPosition >= robot.Max_Lift ? 0 : 1) : (D_Down ? (CurrentPosition <= 0 ? 0 : -1) : Min_Power));
+        double Control    = (D_Up ? 1 : (D_Down ? (CurrentPosition <= -50 ? 0 : -1) : Min_Power));
         double Lift_Power = Auto_Condition ? Auto : Control;
         Lift_isAuto = Auto_Condition;
         robot.LiftPower(Lift_Power);

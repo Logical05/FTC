@@ -26,11 +26,11 @@ public class Robot {
     public final double Counts_per_Inch       = Gear_20_HD_HEX / (Wheel_Diameter_Inches * Math.PI);
 
     /** Variables */
-    public final int    High_Junction           = 615;
-    public final int    Medium_Junction         = 445;
-    public final int    Low_Junction            = 240;
-    public final int    Ground_Junction         = 35;
-    public final int    Max_Lift                = 640;
+    public final int    High_Junction           = 625;
+    public final int    Medium_Junction         = 455;
+    public final int    Low_Junction            = 280;
+    public final int    Ground_Junction         = 45;
+    public final int    Max_Lift                = 660;
     public int FL_Target, FR_Target, BL_Target, BR_Target;
     public int Error_FL=0, Error_FR=0, Error_BL=0, Error_BR=0;
 
@@ -112,6 +112,12 @@ public class Robot {
         IMU.initialize(new IMU.Parameters(new RevHubOrientationOnRobot(RevHubOrientationOnRobot.LogoFacingDirection.FORWARD,
                                                                        RevHubOrientationOnRobot.UsbFacingDirection.UP)));
 
+        // Reverse Servo
+        RA.setDirection(Servo.Direction.REVERSE);
+        // Set Servo Position
+        setArmPosition(armPos);
+        K .setPosition(keeperPos);
+
         // Reverse Motors
         FR.setDirection(DcMotorSimple.Direction.REVERSE);
         BR.setDirection(DcMotorSimple.Direction.REVERSE);
@@ -139,14 +145,5 @@ public class Robot {
         LL.setPower(0);
         ML.setPower(0);
         RL.setPower(0);
-
-//        PIDCoefficients Basepid = new PIDCoefficients(5, 0.5, 0);
-//        B.setPIDCoefficients(DcMotor.RunMode.RUN_TO_POSITION, Basepid);
-
-        // Reverse Servo
-        RA.setDirection(Servo.Direction.REVERSE);
-        // Set Servo Position
-        setArmPosition(armPos);
-        K .setPosition(keeperPos);
     }
 }

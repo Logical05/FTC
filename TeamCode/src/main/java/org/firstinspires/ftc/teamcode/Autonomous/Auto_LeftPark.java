@@ -14,7 +14,6 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.PIDCoefficients;
 import com.qualcomm.robotcore.hardware.Servo;
-import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
@@ -29,8 +28,8 @@ import org.openftc.easyopencv.OpenCvCameraRotation;
 import java.util.ArrayList;
 
 @Config
-@Autonomous(name = "Auto_Left")
-public class Auto_Left extends LinearOpMode {
+@Autonomous(name = "Auto_LeftPark")
+public class Auto_LeftPark extends LinearOpMode {
     /** PID Variables */
     public static double R_Kp=1.6, R_Ki=0.085, R_Kd=0.09;
 
@@ -48,7 +47,7 @@ public class Auto_Left extends LinearOpMode {
     /** Variables */
     int            Base_ErrorTolerance = 1;
     int            Tag_ID              = 0;
-    int[]          ConeLift_Level      = {95, 60, 35, 20, 0, 0};
+    int[]          ConeLift_Level      = {100, 85, 70, 30, 0, 0};
     double[]       CurrentXY           = {1.47068085106383, 0.3660998492209};
     final double[] Tile_Size           = {23.5, 23.5};  // Width * Length
     double yaw, Heading=0, K_pos=0, Arm_pos=0;
@@ -100,7 +99,7 @@ public class Auto_Left extends LinearOpMode {
         boolean Base_atSetpoint = false;
         while (!isStarted() && !isStopRequested()) {
             if (!Base_atSetpoint) {
-                Base_atSetpoint = robot.Turn_Base(45, 0.5, Base_ErrorTolerance);
+                Base_atSetpoint = robot.Turn_Base(0, 0.5, Base_ErrorTolerance);
                 continue;
             }
             B.setPower(0);
@@ -144,9 +143,8 @@ public class Auto_Left extends LinearOpMode {
     }
 
     private void Move(double power, double Kp, double Ki, double targetX, double targetY, double stopSecond,
-                      int Base_angle, double K_pos, double Arm_pos, int Height, double timeOut) {
+                      int Base_angle, double K_pos, double Arm_pos, int Height) {
         yaw = -imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);
-        ElapsedTime runtime = new ElapsedTime();
         double X        = targetX - CurrentXY[0];
         double Y        = targetY - CurrentXY[1];
         double absX     = Math.abs(X);
@@ -176,21 +174,18 @@ public class Auto_Left extends LinearOpMode {
         robot.MoveTargetPosition(FL_BR_In, FR_BL_In, FR_BL_In, FL_BR_In);
         robot.MoveMode(DcMotor.RunMode.RUN_TO_POSITION);
 
-        runtime.reset();
-
         while (opModeIsActive() && (MoveisBusy || !Lift_atTarget)) {
-            if ((runtime.seconds() >= timeOut) && (timeOut != 0)) break;
 //            if (MoveisBusy) {
-            yaw = -imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);
-            double X2 = (Math.cos(Heading) * X1) - (Math.sin(Heading) * Y1);
-            double Y2 = (Math.sin(Heading) * X1) + (Math.cos(Heading) * Y1);
-            // Rotate
-            double R = pid_R.Calculate(AngleWrap(Heading - yaw));
-            // Denominator for division to get no more than 1
-            double D = Math.max(Math.abs(X2) + Math.abs(Y2) + Math.abs(R), 1);
-            robot.MovePower((Y2 + X2 + R) / D, (Y2 - X2 - R) / D,
-                    (Y2 - X2 + R) / D, (Y2 + X2 - R) / D);
-            MoveisBusy = robot.MoveisBusy();
+                yaw = -imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);
+                double X2 = (Math.cos(Heading) * X1) - (Math.sin(Heading) * Y1);
+                double Y2 = (Math.sin(Heading) * X1) + (Math.cos(Heading) * Y1);
+                // Rotate
+                double R = pid_R.Calculate(AngleWrap(Heading - yaw));
+                // Denominator for division to get no more than 1
+                double D = Math.max(Math.abs(X2) + Math.abs(Y2) + Math.abs(R), 1);
+                robot.MovePower((Y2 + X2 + R) / D, (Y2 - X2 - R) / D,
+                        (Y2 - X2 + R) / D, (Y2 + X2 - R) / D);
+                MoveisBusy = robot.MoveisBusy();
 //            } else {
 //                robot.MovePower(0, 0, 0, 0);
 //                robot.MoveMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
@@ -200,7 +195,7 @@ public class Auto_Left extends LinearOpMode {
             K.setPosition(K_pos);
             robot.setArmPosition(Arm_pos);
             if (!Base_atSetpoint) {
-                Base_atSetpoint = robot.Turn_Base(Base_angle, 0.65, Base_ErrorTolerance);
+                Base_atSetpoint = robot.Turn_Base(Base_angle, 0.75, Base_ErrorTolerance);
                 continue;
             }
             B.setPower(0);
@@ -232,7 +227,7 @@ public class Auto_Left extends LinearOpMode {
 
             Lift(Height);
             if (!Base_atSetpoint) {
-                Base_atSetpoint = robot.Turn_Base(Base_angle, 0.65, Base_ErrorTolerance);
+                Base_atSetpoint = robot.Turn_Base(Base_angle, 0.75, Base_ErrorTolerance);
                 continue;
             }
             B.setPower(0);
@@ -246,48 +241,17 @@ public class Auto_Left extends LinearOpMode {
         Init();
         WaitForStart();
         if (opModeIsActive()) {
-            Move(0.6, 4.75, 0.23, 1.68, 2.65, 0.25, 45, 0, 0, robot.High_Junction-20, 0);
-            robot.setArmPosition(0.35);
-            sleep(100);
-            K.setPosition(0.34);
-            Lift(ConeLift_Level[0]);
-            sleep(100);
-            Move(0.5, 3.86, 0.19, 1.5, 2.55, 0.25, 45, 0.25, 0.34, ConeLift_Level[0], 1.25);
-            Turn(-90, ConeLift_Level[0], -3, 0.25);
-            for (int i=0; i<=4; i++) {
-                Move(0.5, 4.4, 0.19, 0.629, 2.55, 0.25, -3, 0.2, 0.34, ConeLift_Level[i], 0);
-                robot.Error_FL = robot.Error_FR = robot.Error_BL = robot.Error_BR = 0;
-                K.setPosition(0);
-                sleep(500);
-                Lift(500);
-                sleep(100);
-                Move(0.5, 3.82, 0.19, 1.725, 2.55, 0.25, 125, 0, 0, robot.High_Junction-20, 0);
-                robot.Error_FL = robot.FL_Target - FL.getCurrentPosition();
-                robot.Error_FR = robot.FR_Target - FR.getCurrentPosition();
-                robot.Error_BL = robot.BL_Target - BL.getCurrentPosition();
-                robot.Error_BR = robot.BR_Target - BR.getCurrentPosition();
-                robot.setArmPosition(0.35);
-                sleep(100);
-                K.setPosition(0.34);
-                Lift(ConeLift_Level[i]);
-                sleep(100);
-            }
-            telemetry.update();
-            robot.setArmPosition(0);
-            sleep(100);
+            Move(0.6, 4.75, 0.23, CurrentXY[0], 1.5, 0.25, 0, 0, 0, 0);
             switch (Tag_ID) {
                 case 8:
-                    Move(1, 4.75, 0.23, 0.5, 2.5, 0.25, 0, 0, 0, 0, 0);
-                    Turn(-180, 0, 0, 0.25);
-                    Move(1, 4.75, 0.23, 0.5, 2, 10, 0, 0, 0, 0, 0);
+                    Turn(-90, 0, 0, 0.25);
+                    Move(1, 4.75, 0.23, 0.5, 1.5, 30, 0, 0, 0, 0);
                 case 10:
-                    Move(1, 4.75, 0.23, 1.5, 2.5, 0.25, 0, 0, 0, 0, 0);
-                    Turn(-180, 0, 0, 0.25);
-                    Move(1, 4.75, 0.23, 1.5, 2, 10, 0, 0, 0, 0, 0);
+                    Turn(-90, 0, 0, 0.25);
+                    Move(1, 4.75, 0.23, 1.5, 1.5, 30, 0, 0, 0, 0);
                 case 15:
-                    Move(1, 4.75, 0.23, 2.5, 2.5, 0.25, 0, 0, 0, 0, 0);
-                    Turn(-180, 0, 0, 0.25);
-                    Move(1, 4.75, 0.23, 2.5, 2, 10, 0, 0, 0, 0, 0);
+                    Turn(-90, 0, 0, 0.25);
+                    Move(1, 4.75, 0.23, 2.5, 1.5, 30, 0, 0, 0, 0);
             }
         }
     }
