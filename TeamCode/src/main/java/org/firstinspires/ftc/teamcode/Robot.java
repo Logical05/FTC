@@ -1,7 +1,6 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
-
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
@@ -9,30 +8,28 @@ import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.Servo;
 
 public class Robot {
-    /** Hardware */
-    public IMU IMU;
-    public Servo LA, RA, K;
-    public DcMotorEx FL, FR, BL, BR, B, LL, ML, RL;
+    public static IMU IMU;
+    public static Servo LA, RA, K;
+    public static DcMotorEx FL, FR, BL, BR, B, LL, ML, RL;
+    public static int FL_Target, FR_Target, BL_Target, BR_Target;
+    /** TETRIX Motor Encoder per revolution */
+    public static final int    Counts_per_TETRIX   = 24;
+    /** HD HEX Motor Encoder per revolution */
+    public static final int    Counts_per_HD_HEX   = 28;
+    /** 20:1 HD HEX Motor Encoder per revolution */
+    public static final int    Gear_20_HD_HEX      = Counts_per_HD_HEX * 20;
+    /** (3 * 4 * 5):1 UltraPlanetary HD HEX Motor Encoder per revolution */
+    public static final double Gear_60_HD_HEX      = Counts_per_HD_HEX * 54.8;
+    public static final double Wheel_Diameter_Inch = 3;
+    public static final double Counts_per_Inch     = Gear_20_HD_HEX /
+                                                     (Wheel_Diameter_Inch * Math.PI);
 
-    /** Motor Variables */
-    public final int    Counts_per_TETRIX   = 24;  // TETRIX Motor Encoder per revolution
-    public final int    Counts_per_HD_HEX   = 28;  // HD HEX Motor Encoder per revolution
-    public final double Gear_60_HD_HEX      = Counts_per_HD_HEX * 54.8;  // (3 * 4 * 5):1 UltraPlanetary HD HEX Motor Encoder per revolution
-    public final int    Gear_20_HD_HEX      = Counts_per_HD_HEX * 20;  // 20:1 HD HEX Motor Encoder per revolution
-    public final double Wheel_Diameter_Inch = 4;
-    public final double Counts_per_Inch     = Gear_20_HD_HEX / (Wheel_Diameter_Inch * Math.PI);
-
-    /** Variables */
-    public int FL_Target, FR_Target, BL_Target, BR_Target;
-    public int Error_FL=0, Error_FR=0, Error_BL=0, Error_BR=0;
-
-    public void LiftPower(double Lift_Power) {
-        LL.setPower(Lift_Power);
-        ML.setPower(Lift_Power);
-        RL.setPower(Lift_Power);
+    public static void LiftPower(double liftPower) {
+        LL.setPower(liftPower);
+        RL.setPower(liftPower);
     }
 
-    public void MovePower(double Front_Left, double Front_Right,
+    public static void MovePower(double Front_Left, double Front_Right,
                           double Back_Left,  double Back_Right) {
         FL.setPower(Front_Left);
         FR.setPower(Front_Right);
@@ -40,18 +37,18 @@ public class Robot {
         BR.setPower(Back_Right);
     }
 
-    public void MoveMode(DcMotor.RunMode moveMode) {
+    public static void MoveMode(DcMotor.RunMode moveMode) {
         FL.setMode(moveMode);
         FR.setMode(moveMode);
         BL.setMode(moveMode);
         BR.setMode(moveMode);
     }
 
-    public boolean MoveisBusy() {
+    public static boolean MoveisBusy() {
         return FL.isBusy() && FR.isBusy() && BL.isBusy() && BR.isBusy();
     }
 
-    public void MoveTargetPosition(double FL_Inches, double FR_Inches,
+    public static void MoveTargetPosition(double FL_Inches, double FR_Inches,
                                    double BL_Inches,  double BR_Inches) {
         FL_Target = FL.getCurrentPosition() + ((int) (FL_Inches * Counts_per_Inch));
         FR_Target = FR.getCurrentPosition() + ((int) (FR_Inches * Counts_per_Inch));
@@ -61,18 +58,18 @@ public class Robot {
 //        FR.setTargetPositionTolerance(2);
 //        BL.setTargetPositionTolerance(2);
 //        BR.setTargetPositionTolerance(2);
-        FL.setTargetPosition(FL_Target + Error_FL);
-        FR.setTargetPosition(FR_Target + Error_FR);
-        BL.setTargetPosition(BL_Target + Error_BL);
-        BR.setTargetPosition(BR_Target + Error_BR);
+        FL.setTargetPosition(FL_Target);
+        FR.setTargetPosition(FR_Target);
+        BL.setTargetPosition(BL_Target);
+        BR.setTargetPosition(BR_Target);
     }
 
-    public void setArmPosition(double armPos) {
+    public static void setArmPosition(double armPos) {
         LA.setPosition(armPos);
         RA.setPosition(armPos);
     }
 
-    public void Initialize(IMU imu, DcMotor.RunMode moveMode,
+    public static void Initialize(IMU imu, DcMotor.RunMode moveMode,
                            DcMotorEx Front_Left, DcMotorEx Front_Right,
                            DcMotorEx Back_Left,  DcMotorEx Back_Right,  DcMotorEx Base,
                            DcMotorEx Left_Lift,  DcMotorEx Middle_Lift, DcMotorEx Right_Lift,
@@ -93,8 +90,9 @@ public class Robot {
         K   = Keeper;
 
         // Initialize IMU
-        IMU.initialize(new IMU.Parameters(new RevHubOrientationOnRobot(RevHubOrientationOnRobot.LogoFacingDirection.FORWARD,
-                RevHubOrientationOnRobot.UsbFacingDirection.UP)));
+        IMU.initialize(new IMU.Parameters(new RevHubOrientationOnRobot(
+                RevHubOrientationOnRobot.LogoFacingDirection.BACKWARD,
+                RevHubOrientationOnRobot.UsbFacingDirection.RIGHT)));
 
         // Reverse Servo
         RA.setDirection(Servo.Direction.REVERSE);
