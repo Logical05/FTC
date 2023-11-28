@@ -8,9 +8,8 @@ import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.Servo;
 
 public class Robot {
-    public static IMU IMU;
-    public static Servo LA, RA, K;
-    public static DcMotorEx FL, FR, BL, BR, B, LL, ML, RL;
+    static Servo LLL, LRL, LA, RA, LH, RH, K;
+    static DcMotorEx FL, FR, BL, BR, LL, RL, PU, V;
     public static int FL_Target, FR_Target, BL_Target, BR_Target;
     /** TETRIX Motor Encoder per revolution */
     public static final int    Counts_per_TETRIX   = 24;
@@ -64,68 +63,63 @@ public class Robot {
         BR.setTargetPosition(BR_Target);
     }
 
-    public static void setArmPosition(double armPos) {
-        LA.setPosition(armPos);
-        RA.setPosition(armPos);
+    public static void SetDuoServoPos(double pos, Servo L_servo, Servo R_servo) {
+        pos = Math.min(Math.max(pos, 0), 1);
+        L_servo.setPosition(pos);
+        R_servo.setPosition(pos);
     }
 
     public static void Initialize(IMU imu, DcMotor.RunMode moveMode,
-                           DcMotorEx Front_Left, DcMotorEx Front_Right,
-                           DcMotorEx Back_Left,  DcMotorEx Back_Right,  DcMotorEx Base,
-                           DcMotorEx Left_Lift,  DcMotorEx Middle_Lift, DcMotorEx Right_Lift,
-                           double armPos, Servo Left_Arm, Servo Right_Arm,
-                           double keeperPos, Servo Keeper) {
+                           DcMotorEx motor1, DcMotorEx motor2, DcMotorEx motor3, DcMotorEx motor4,
+                           DcMotorEx motor5, DcMotorEx motor6, DcMotorEx motor7, DcMotorEx motor8,
+                           Servo servo1, Servo servo2, Servo servo3, Servo servo4, Servo servo5,
+                           Servo servo6, Servo servo7, double liftAng) {
         // Add Variable
-        IMU = imu;
-        FL  = Front_Left;
-        FR  = Front_Right;
-        BL  = Back_Left;
-        BR  = Back_Right;
-        B   = Base;
-        LL  = Left_Lift;
-        ML  = Middle_Lift;
-        RL  = Right_Lift;
-        LA  = Left_Arm;
-        RA  = Right_Arm;
-        K   = Keeper;
+        FL  = motor1; FR  = motor2; BL  = motor3; BR  = motor4;
+        LL  = motor5; RL  = motor6; PU  = motor7; V   = motor8;
+        LLL = servo1; LRL = servo2; LA  = servo3; RA  = servo4;
+        LH  = servo5; RH  = servo6; K   = servo7;
 
         // Initialize IMU
-        IMU.initialize(new IMU.Parameters(new RevHubOrientationOnRobot(
+        imu.initialize(new IMU.Parameters(new RevHubOrientationOnRobot(
                 RevHubOrientationOnRobot.LogoFacingDirection.BACKWARD,
                 RevHubOrientationOnRobot.UsbFacingDirection.RIGHT)));
 
         // Reverse Servo
-        RA.setDirection(Servo.Direction.REVERSE);
+        LLL.setDirection(Servo.Direction.REVERSE);
+        LA .setDirection(Servo.Direction.REVERSE);
+        LH .setDirection(Servo.Direction.REVERSE);
         // Set Servo Position
-        setArmPosition(armPos);
-        K .setPosition(keeperPos);
+        SetDuoServoPos(liftAng, LLL, LRL);
 
         // Reverse Motors
-        FR.setDirection(DcMotorSimple.Direction.REVERSE);
-        BR.setDirection(DcMotorSimple.Direction.REVERSE);
-        B .setDirection(DcMotorSimple.Direction.REVERSE);
-        RL.setDirection(DcMotorSimple.Direction.REVERSE);
+        FL.setDirection(DcMotorSimple.Direction.REVERSE);
+        BL.setDirection(DcMotorSimple.Direction.REVERSE);
+        LL.setDirection(DcMotorSimple.Direction.REVERSE);
+        PU.setDirection(DcMotorSimple.Direction.REVERSE);
         // setMode Motors
-        MoveMode  (DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        MoveMode  (moveMode);
-        B .setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        MoveMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        MoveMode(moveMode);
+        LL.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        RL.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         LL.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        ML.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         RL.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        PU.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        V .setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         // SetBehavior Motors
-        FL.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        FR.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        BL.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        BR.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        B .setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        LL.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        ML.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        RL.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        motor1.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        motor2.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        motor3.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        motor4.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        motor5.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        motor6.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        motor7.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        motor8.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         // SetPower Motors
         MovePower(0, 0, 0, 0);
-        B .setPower(0);
-        LL.setPower(0);
-        ML.setPower(0);
-        RL.setPower(0);
+        motor5.setPower(0);
+        motor6.setPower(0);
+        motor7.setPower(0);
+        motor8.setPower(0);
     }
 }
