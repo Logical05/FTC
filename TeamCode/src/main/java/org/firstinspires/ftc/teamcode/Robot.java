@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode;
 
+import com.qualcomm.robotcore.util.Range;
+
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
@@ -63,17 +65,24 @@ public class Robot {
         BR.setTargetPosition(BR_Target);
     }
 
-    public static void SetDuoServoPos(double pos, Servo L_servo, Servo R_servo) {
-        pos = Math.min(Math.max(pos, 0), 1);
+    /**
+     * Default Range : float[] minMax = null
+     * <p>
+     * Custom Range : float[] minMax = Your Range
+     */
+    public static double SetDuoServoPos(double pos, float[] minMax, Servo L_servo, Servo R_servo) {
+        pos = minMax == null ? Range.clip(pos, 0, 1) :
+                               Range.clip(pos, minMax[0], minMax[1]);
         L_servo.setPosition(pos);
         R_servo.setPosition(pos);
+        return pos;
     }
 
     public static void Initialize(IMU imu, DcMotor.RunMode moveMode,
                            DcMotorEx motor1, DcMotorEx motor2, DcMotorEx motor3, DcMotorEx motor4,
                            DcMotorEx motor5, DcMotorEx motor6, DcMotorEx motor7, DcMotorEx motor8,
                            Servo servo1, Servo servo2, Servo servo3, Servo servo4, Servo servo5,
-                           Servo servo6, Servo servo7, double liftAng) {
+                           Servo servo6, Servo servo7, double[] DuoServoAng) {
         // Add Variable
         FL  = motor1; FR  = motor2; BL  = motor3; BR  = motor4;
         LL  = motor5; RL  = motor6; PU  = motor7; V   = motor8;
@@ -90,7 +99,9 @@ public class Robot {
         LA .setDirection(Servo.Direction.REVERSE);
         LH .setDirection(Servo.Direction.REVERSE);
         // Set Servo Position
-        SetDuoServoPos(liftAng, LLL, LRL);
+        SetDuoServoPos(DuoServoAng[0], null, LLL, LRL);
+        SetDuoServoPos(DuoServoAng[1], null, LA,  RA);
+        SetDuoServoPos(DuoServoAng[2], null, LH,  RH);
 
         // Reverse Motors
         FL.setDirection(DcMotorSimple.Direction.REVERSE);
