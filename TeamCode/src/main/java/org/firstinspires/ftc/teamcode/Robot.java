@@ -95,7 +95,7 @@ public class Robot {
                 RevHubOrientationOnRobot.UsbFacingDirection.RIGHT)));
 
         // Reverse Servo
-        LLL.setDirection(Servo.Direction.REVERSE);
+        LRL.setDirection(Servo.Direction.REVERSE);
         LA .setDirection(Servo.Direction.REVERSE);
         LH .setDirection(Servo.Direction.REVERSE);
         // Set Servo Position

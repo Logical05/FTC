@@ -31,7 +31,7 @@ public class Tele extends LinearOpMode {
     DcMotorEx FL, FR, BL, BR, LL, RL, PU, V;
 
     /** Variables */
-    public static double setpoint = Math.toDegrees(0), PUPow = 0, liftAng = 0.96, armAng = 0, hoistAng = 0;
+    double setpoint = Math.toDegrees(0), PUPow = 0, liftAng = 0, armAng = 0, hoistAng = 0;
     boolean VPressed = false, VisBusy = false;
 
     private void Init() {
@@ -144,11 +144,11 @@ public class Tele extends LinearOpMode {
                 }
                 Movement();
                 Vacuum();
-//                Lift();
-//                RaiseLift();
-//                Arm();ss
-//                Hoist();
-//                PullUp();
+                Lift();
+                RaiseLift();
+                Arm();
+                Hoist();
+                PullUp();
                 telemetry.addData("setpoint",Math.toDegrees(setpoint));
                 telemetry.addData("LL", LL.getCurrentPosition());
                 telemetry.addData("RL", RL.getCurrentPosition());
