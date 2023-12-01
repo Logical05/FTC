@@ -10,7 +10,7 @@ import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.Servo;
 
 public class Robot {
-    static Servo LLL, LRL, LA, RA, LH, RH, K;
+    static Servo LLL, LRL, LA, RA, LH, RH, K, KA, R;
     static DcMotorEx FL, FR, BL, BR, LL, RL, PU, V;
     public static int FL_Target, FR_Target, BL_Target, BR_Target;
     /** TETRIX Motor Encoder per revolution */
@@ -78,16 +78,25 @@ public class Robot {
         return pos;
     }
 
+    public static double SetServoPos(double pos, float[] minMax, Servo servoo){
+        pos = minMax == null ? Range.clip(pos, 0, 1):
+                               Range.clip((pos), minMax[0], minMax[1]);
+        servoo.setPosition(pos);
+        return pos;
+    }
+
     public static void Initialize(IMU imu, DcMotor.RunMode moveMode,
                            DcMotorEx motor1, DcMotorEx motor2, DcMotorEx motor3, DcMotorEx motor4,
                            DcMotorEx motor5, DcMotorEx motor6, DcMotorEx motor7, DcMotorEx motor8,
                            Servo servo1, Servo servo2, Servo servo3, Servo servo4, Servo servo5,
-                           Servo servo6, Servo servo7, double[] DuoServoAng) {
+                           Servo servo6, Servo servo7, Servo servo8, Servo servo9,
+                                  double[] DuoServoAng, double[] ServoAng) {
         // Add Variable
         FL  = motor1; FR  = motor2; BL  = motor3; BR  = motor4;
         LL  = motor5; RL  = motor6; PU  = motor7; V   = motor8;
         LLL = servo1; LRL = servo2; LA  = servo3; RA  = servo4;
-        LH  = servo5; RH  = servo6; K   = servo7;
+        LH  = servo5; RH  = servo6; K   = servo7; KA  = servo8;
+        R   = servo9;
 
         // Initialize IMU
         imu.initialize(new IMU.Parameters(new RevHubOrientationOnRobot(
@@ -98,11 +107,16 @@ public class Robot {
         LRL.setDirection(Servo.Direction.REVERSE);
         LA .setDirection(Servo.Direction.REVERSE);
         LH .setDirection(Servo.Direction.REVERSE);
+        K  .setDirection(Servo.Direction.REVERSE);
+        KA .setDirection(Servo.Direction.REVERSE);
+        R  .setDirection(Servo.Direction.REVERSE);
         // Set Servo Position
         SetDuoServoPos(DuoServoAng[0], null, LLL, LRL);
         SetDuoServoPos(DuoServoAng[1], null, LA,  RA);
         SetDuoServoPos(DuoServoAng[2], null, LH,  RH);
-
+        SetServoPos(ServoAng[0] ,null, K);
+        SetServoPos(ServoAng[1], null, KA);
+        SetServoPos(ServoAng[2], null, R);
         // Reverse Motors
         FL.setDirection(DcMotorSimple.Direction.REVERSE);
         BL.setDirection(DcMotorSimple.Direction.REVERSE);

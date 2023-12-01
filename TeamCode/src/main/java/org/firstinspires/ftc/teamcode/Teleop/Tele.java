@@ -27,11 +27,11 @@ public class Tele extends LinearOpMode {
 
     /** Hardware */
     IMU imu;
-    Servo LLL, LRL, LA, RA, LH, RH, K;
+    Servo LLL, LRL, LA, RA, LH, RH, K, KA, R;
     DcMotorEx FL, FR, BL, BR, LL, RL, PU, V;
 
     /** Variables */
-    double setpoint = Math.toDegrees(0), PUPow = 0, liftAng = 0, armAng = 0, hoistAng = 0;
+    double setpoint = Math.toDegrees(0), PUPow = 0, liftAng = 0, armAng = 0, hoistAng = 0, keepAng = 0, keepArmAng = 0, rocketAng = 0;
     boolean VPressed = false, VisBusy = false;
 
     private void Init() {
@@ -44,11 +44,13 @@ public class Tele extends LinearOpMode {
         LLL = hardwareMap.get(Servo.class,     "Lift_LL");      LRL = hardwareMap.get(Servo.class,     "Lift_RL");
         LA  = hardwareMap.get(Servo.class,     "Left_Arm");     RA  = hardwareMap.get(Servo.class,     "Right_Arm");
         LH  = hardwareMap.get(Servo.class,     "Left_Hoist");   RH  = hardwareMap.get(Servo.class,     "Right_Hoist");
-        K   = hardwareMap.get(Servo.class,     "Keep");
+        K   = hardwareMap.get(Servo.class,     "Keep");         KA  = hardwareMap.get(Servo.class,     "Keep_Arm");
+        R   = hardwareMap.get(Servo.class,     "Rocket");
 
         // Initialize Robot
         Robot.Initialize(imu, DcMotor.RunMode.RUN_WITHOUT_ENCODER, FL, FR, BL, BR, LL, RL, PU, V,
-                         LLL, LRL, LA, RA, LH, RH, K, new double[]{liftAng, armAng, hoistAng});
+                         LLL, LRL, LA, RA, LH, RH, K, KA, R, new double[]{liftAng, armAng, hoistAng},
+                         new double[]{keepAng, keepArmAng, rocketAng});
 
         // Show FTC Dashboard
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
@@ -125,6 +127,28 @@ public class Tele extends LinearOpMode {
         hoistAng = Robot.SetDuoServoPos(hoistAng, null, LH, RH);
     }
 
+    private void Keep(){
+        double keepSp = 0.01;
+        keepAng = gamepad2.dpad_up   ? keepAng + keepSp :
+                  gamepad2.dpad_down ? keepAng - keepSp : keepAng;
+        keepAng = Robot.SetServoPos(keepAng, null, K);
+    }
+
+    private void Keep_Arm(){
+        double keepArmSp = 0.01;
+        keepArmAng = gamepad2.dpad_left   ? keepArmAng + keepArmSp :
+                  gamepad2.dpad_right  ? keepArmAng - keepArmSp : keepArmAng;
+        keepArmAng = Robot.SetServoPos(keepArmAng, null, KA);
+
+    }
+
+    private void Rocket(){
+        double rocketSp = 0.01;
+        rocketAng = gamepad2.square  ? rocketAng + rocketSp :
+                  gamepad2.circle  ? rocketAng - rocketSp : rocketAng;
+        rocketAng = Robot.SetServoPos(rocketAng, null, R);
+    }
+
     private void Lift() {
         double LT = gamepad1.left_trigger;
         double RT = gamepad1.right_trigger;
@@ -142,13 +166,16 @@ public class Tele extends LinearOpMode {
                     imu.resetYaw();
                     setpoint = 0;
                 }
-                Movement();
+//                Movement();
                 Vacuum();
                 Lift();
                 RaiseLift();
                 Arm();
                 Hoist();
                 PullUp();
+                Keep();
+                Keep_Arm();
+                Rocket();
                 telemetry.addData("setpoint",Math.toDegrees(setpoint));
                 telemetry.addData("LL", LL.getCurrentPosition());
                 telemetry.addData("RL", RL.getCurrentPosition());
@@ -156,6 +183,9 @@ public class Tele extends LinearOpMode {
                 telemetry.addData("FR", FR.getCurrentPosition());
                 telemetry.addData("BL", BL.getCurrentPosition());
                 telemetry.addData("BR", BR.getCurrentPosition());
+                telemetry.addData("keep", keepAng);
+                telemetry.addData("keep_Arm", keepArmAng);
+                telemetry.addData("Rocket", rocketAng);
                 telemetry.update();
             }
         }
