@@ -31,7 +31,7 @@ public class Tele extends LinearOpMode {
     DcMotorEx FL, FR, BL, BR, LL, RL, PU, V;
 
     /** Variables */
-    double setpoint = Math.toDegrees(0), PUPow = 0, liftAng = 0, armAng = 0, hoistAng = 0, keepAng = 0, keepArmAng = 0, rocketAng = 0;
+    double setpoint = Math.toDegrees(0.1), PUPow = 0.1, liftAng = 1, armAng = 0.1, hoistAng = 0.1, keepAng = 0.1, keepArmAng = 0.1, rocketAng = 0.1;
     boolean VPressed = false, VisBusy = false;
 
     private void Init() {
@@ -63,11 +63,11 @@ public class Tele extends LinearOpMode {
         double X2  =  (Math.cos(yaw) * X1) - (Math.sin(yaw) * Y1);
         double Y2  =  (Math.sin(yaw) * X1) + (Math.cos(yaw) * Y1);
         // Rotate
-        double R =  pid_R.Calculate(WrapRads(setpoint + yaw));
+        double R =  pid_R.Calculate(WrapRads(setpoint - yaw));
         double X = -gamepad1.right_stick_x;
         if (X != 0) {
             R = X;
-            setpoint = -yaw;
+            setpoint = yaw;
         }
         // Denominator for division to get no more than 1
         double D = Math.max(Math.abs(X2) + Math.abs(Y2) + Math.abs(R), 1);
@@ -86,7 +86,7 @@ public class Tele extends LinearOpMode {
         if (VPressed) { return; }
         VPressed = true;
         if (!VisBusy) {
-            double pow = sq ? 1 : -1;
+            double pow = sq ? 0.8: -1;
             V.setPower(pow);
             VisBusy = true;
             return;
@@ -110,7 +110,7 @@ public class Tele extends LinearOpMode {
         double raiseSp = 0.02;
         liftAng = gamepad1.left_bumper  ? liftAng + raiseSp :
                   gamepad1.right_bumper ? liftAng - raiseSp : liftAng;
-        liftAng = Robot.SetDuoServoPos(liftAng, new float[]{0, 0.96f}, LLL, LRL);
+        liftAng = Robot.SetDuoServoPos(liftAng, new float[]{1f, 0.96f}, LLL, LRL);
     }
 
     private void Arm() {
@@ -150,9 +150,9 @@ public class Tele extends LinearOpMode {
     }
 
     private void Lift() {
-        double LT = gamepad1.left_trigger;
-        double RT = gamepad1.right_trigger;
-        double Lift_Power = LT >= 0.25 ? LT : RT >= 0.25 ? -RT : 0.05;
+        double LL = gamepad1.left_trigger;
+        double RL = gamepad1.right_trigger;
+        double Lift_Power = LL >= 0.25 ? LL : RL >= 0.25 ? -RL : 0.05;
         Robot.LiftPower(Lift_Power);
     }
 
@@ -166,8 +166,8 @@ public class Tele extends LinearOpMode {
                     imu.resetYaw();
                     setpoint = 0;
                 }
-//                Movement();
-                Vacuum();
+                Movement();
+                Vacuum();     
                 Lift();
                 RaiseLift();
                 Arm();
