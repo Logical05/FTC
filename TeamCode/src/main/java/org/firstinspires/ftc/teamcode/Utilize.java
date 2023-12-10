@@ -29,7 +29,7 @@ public class Utilize {
         return degs;
     }
 
-    public static byte SigNum(float number) {
+    public static byte SigNum(double number) {
         return (byte) (number == 0 ? 0 : (number < 0 ? -1 : 1));
     }
 }

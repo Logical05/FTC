@@ -31,7 +31,7 @@ public class Robot {
     }
 
     public static void MovePower(double Front_Left, double Front_Right,
-                          double Back_Left,  double Back_Right) {
+                                 double Back_Left,  double Back_Right) {
         FL.setPower(Front_Left);
         FR.setPower(Front_Right);
         BL.setPower(Back_Left);
@@ -50,7 +50,7 @@ public class Robot {
     }
 
     public static void MoveTargetPosition(double FL_Inches, double FR_Inches,
-                                   double BL_Inches,  double BR_Inches) {
+                                          double BL_Inches, double BR_Inches) {
         FL_Target = FL.getCurrentPosition() + ((int) (FL_Inches * Counts_per_Inch));
         FR_Target = FR.getCurrentPosition() + ((int) (FR_Inches * Counts_per_Inch));
         BL_Target = BL.getCurrentPosition() + ((int) (BL_Inches * Counts_per_Inch));
@@ -65,23 +65,29 @@ public class Robot {
         BR.setTargetPosition(BR_Target);
     }
 
-    /**
-     * Default Range : float[] minMax = null
-     * <p>
-     * Custom Range : float[] minMax = Your Range
-     */
     public static double SetDuoServoPos(double pos, float[] minMax, Servo L_servo, Servo R_servo) {
-        pos = minMax == null ? Range.clip(pos, 0, 1) :
-                               Range.clip(pos, minMax[0], minMax[1]);
+        pos = Range.clip(pos, minMax[0], minMax[1]);
         L_servo.setPosition(pos);
         R_servo.setPosition(pos);
         return pos;
     }
 
-    public static double SetServoPos(double pos, float[] minMax, Servo servoo){
-        pos = minMax == null ? Range.clip(pos, 0, 1):
-                               Range.clip((pos), minMax[0], minMax[1]);
-        servoo.setPosition(pos);
+    public static double SetDuoServoPos(double pos, Servo L_servo, Servo R_servo) {
+        pos = Range.clip(pos, 0, 1);
+        L_servo.setPosition(pos);
+        R_servo.setPosition(pos);
+        return pos;
+    }
+
+    public static double SetServoPos(double pos, float[] minMax, Servo servo){
+        pos = Range.clip(pos, minMax[0], minMax[1]);
+        servo.setPosition(pos);
+        return pos;
+    }
+
+    public static double SetServoPos(double pos, Servo servo){
+        pos = Range.clip(pos, 0, 1);
+        servo.setPosition(pos);
         return pos;
     }
 
@@ -90,7 +96,7 @@ public class Robot {
                            DcMotorEx motor5, DcMotorEx motor6, DcMotorEx motor7, DcMotorEx motor8,
                            Servo servo1, Servo servo2, Servo servo3, Servo servo4, Servo servo5,
                            Servo servo6, Servo servo7, Servo servo8, Servo servo9,
-                                  double[] DuoServoAng, double[] ServoAng) {
+                           double[] DuoServoAng, double[] ServoAng) {
         // Add Variable
         FL  = motor1; FR  = motor2; BL  = motor3; BR  = motor4;
         LL  = motor5; RL  = motor6; PU  = motor7; V   = motor8;
@@ -111,12 +117,12 @@ public class Robot {
         KA .setDirection(Servo.Direction.REVERSE);
         R  .setDirection(Servo.Direction.REVERSE);
         // Set Servo Position
-        SetDuoServoPos(DuoServoAng[0], null, LLL, LRL);
-        SetDuoServoPos(DuoServoAng[1], null, LA,  RA);
-        SetDuoServoPos(DuoServoAng[2], null, LH,  RH);
-        SetServoPos(ServoAng[0] ,null, K);
-        SetServoPos(ServoAng[1], null, KA);
-        SetServoPos(ServoAng[2], null, R);
+        SetDuoServoPos(DuoServoAng[0], LLL, LRL);
+        SetDuoServoPos(DuoServoAng[1], LA,  RA);
+        SetDuoServoPos(DuoServoAng[2], LH,  RH);
+        SetServoPos(ServoAng[0], K);
+        SetServoPos(ServoAng[1], KA);
+        SetServoPos(ServoAng[2], R);
         // Reverse Motors
         FL.setDirection(DcMotorSimple.Direction.REVERSE);
         BL.setDirection(DcMotorSimple.Direction.REVERSE);
