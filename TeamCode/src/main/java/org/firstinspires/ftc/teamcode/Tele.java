@@ -1,25 +1,21 @@
 package org.firstinspires.ftc.teamcode;
 
+import static org.firstinspires.ftc.teamcode.Utilize.WrapRads;
+
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
-
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.Servo;
-import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 
-import static org.firstinspires.ftc.teamcode.Utilize.*;
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 
 @Config
 @TeleOp(name="Tele")
-public class Tele extends LinearOpMode {
-    /** Usage External Class */
-    Controller pid_R = new Controller(1.6, 0.01, 0.09, 0);
-
+public class Tele extends Robot {
     /** Hardware */
     IMU imu;
     Servo LLL, LRL, LA, RA, LH, RH, K, KA, R;
@@ -43,7 +39,7 @@ public class Tele extends LinearOpMode {
         R   = hardwareMap.get(Servo.class,     "Rocket");
 
         // Initialize Robot
-        Robot.Initialize(imu, DcMotor.RunMode.RUN_WITHOUT_ENCODER,
+        Initialize(imu, DcMotor.RunMode.RUN_WITHOUT_ENCODER,
                          FL, FR, BL, BR, LL, RL, PU, V,
                          LLL, LRL, LA, RA, LH, RH, K, KA, R,
                          new double[]{liftAng, armAng, hoistAng},
@@ -59,16 +55,18 @@ public class Tele extends LinearOpMode {
         double yaw = -imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);
         double x2  =  (Math.cos(yaw) * x1) - (Math.sin(yaw) * y1);
         double y2  =  (Math.sin(yaw) * x1) + (Math.cos(yaw) * y1);
+
         // Rotate
-        double r =  pid_R.Calculate(WrapRads(setpoint - yaw));
+        double r =  new Controller(1.6, 0.01, 0.09, 0).Calculate(WrapRads(setpoint - yaw));
         double x = -gamepad1.right_stick_x;
         if (x != 0) {
             r = x;
             setpoint = yaw;
         }
+
         // Denominator for division to get no more than 1
         double d = Math.max(Math.abs(x2) + Math.abs(y2) + Math.abs(r), 1);
-        Robot.MovePower((y2 + x2 + r) / d, (y2 - x2 - r) / d,
+        MovePower((y2 + x2 + r) / d, (y2 - x2 - r) / d,
                         (y2 - x2 + r) / d,  (y2 + x2 - r) / d);
         telemetry.addData("yaw", Math.toDegrees(yaw));
     }
@@ -107,35 +105,35 @@ public class Tele extends LinearOpMode {
         double raiseSp = 0.02;
         liftAng = gamepad1.left_bumper  ? liftAng + raiseSp :
                   gamepad1.right_bumper ? liftAng - raiseSp : liftAng;
-        liftAng = Robot.SetDuoServoPos(liftAng, new float[]{1f, 0.96f}, LLL, LRL);
+        liftAng = SetDuoServoPos(liftAng, new float[]{1f, 0.96f}, LLL, LRL);
     }
 
     private void Arm() {
         double armSp = 0.02;
         armAng = gamepad1.dpad_left  ? armAng + armSp :
                  gamepad1.dpad_right ? armAng - armSp : armAng;
-        armAng = Robot.SetDuoServoPos(armAng, LA, RA);
+        armAng = SetDuoServoPos(armAng, LA, RA);
     }
 
     private void Hoist() {
         double hoistSp = 0.01;
         hoistAng = gamepad1.dpad_up   ? hoistAng + hoistSp :
                    gamepad1.dpad_down ? hoistAng - hoistSp : hoistAng;
-        hoistAng = Robot.SetDuoServoPos(hoistAng, LH, RH);
+        hoistAng = SetDuoServoPos(hoistAng, LH, RH);
     }
 
     private void Keep(){
         double keepSp = 0.01;
         keepAng = gamepad2.dpad_up   ? keepAng + keepSp :
                   gamepad2.dpad_down ? keepAng - keepSp : keepAng;
-        keepAng = Robot.SetServoPos(keepAng, K);
+        keepAng = SetServoPos(keepAng, K);
     }
 
     private void Keep_Arm(){
         double keepArmSp = 0.01;
         keepArmAng = gamepad2.dpad_left   ? keepArmAng + keepArmSp :
                   gamepad2.dpad_right  ? keepArmAng - keepArmSp : keepArmAng;
-        keepArmAng = Robot.SetServoPos(keepArmAng, KA);
+        keepArmAng = SetServoPos(keepArmAng, KA);
 
     }
 
@@ -143,14 +141,14 @@ public class Tele extends LinearOpMode {
         double rocketSp = 0.01;
         rocketAng = gamepad2.square  ? rocketAng + rocketSp :
                   gamepad2.circle  ? rocketAng - rocketSp : rocketAng;
-        rocketAng = Robot.SetServoPos(rocketAng, R);
+        rocketAng = SetServoPos(rocketAng, R);
     }
 
     private void Lift() {
         double LL = gamepad1.left_trigger;
         double RL = gamepad1.right_trigger;
         double Lift_Power = LL >= 0.25 ? LL : RL >= 0.25 ? -RL : 0.05;
-        Robot.LiftPower(Lift_Power);
+        LiftPower(Lift_Power);
     }
 
     @Override
