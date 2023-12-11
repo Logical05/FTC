@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode;
 
+import android.util.Size;
+
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
@@ -16,39 +18,20 @@ import org.firstinspires.ftc.vision.tfod.TfodProcessor;
 
 import java.util.List;
 
-
 @Config
 @Autonomous(name="Auto")
 public class Auto extends Robot {
     TfodProcessor tfod;
     VisionPortal visionPortal;
-    IMU imu;
-    Servo LLL, LRL, LA, RA, LH, RH, K, KA, R;
-    DcMotorEx FL, FR, BL, BR, LL, RL, PU, V;
 
     final String   TFOD_MODEL_ASSET = "Signal.tflite";
     final String[] LABELS           = {"Signal"};
     String signalPos;
 
     private void Init() {
-        // HardwareMap
-        imu = hardwareMap.get(IMU.class,       "imu");
-        FL  = hardwareMap.get(DcMotorEx.class, "Front_Left");   FR  = hardwareMap.get(DcMotorEx.class, "Front_Right");
-        BL  = hardwareMap.get(DcMotorEx.class, "Back_Left");    BR  = hardwareMap.get(DcMotorEx.class, "Back_Right");
-        LL  = hardwareMap.get(DcMotorEx.class, "Left_Lift");    RL  = hardwareMap.get(DcMotorEx.class, "Right_Lift");
-        PU  = hardwareMap.get(DcMotorEx.class, "Pull_Up");      V   = hardwareMap.get(DcMotorEx.class, "Vacuum");
-        LLL = hardwareMap.get(Servo.class,     "Lift_LL");      LRL = hardwareMap.get(Servo.class,     "Lift_RL");
-        LA  = hardwareMap.get(Servo.class,     "Left_Arm");     RA  = hardwareMap.get(Servo.class,     "Right_Arm");
-        LH  = hardwareMap.get(Servo.class,     "Left_Hoist");   RH  = hardwareMap.get(Servo.class,     "Right_Hoist");
-        K   = hardwareMap.get(Servo.class,     "Keep");         KA  = hardwareMap.get(Servo.class,     "Keep_Arm");
-        R   = hardwareMap.get(Servo.class,     "Rocket");
-
         // Initialize Robot
-        Initialize(imu, DcMotor.RunMode.RUN_WITHOUT_ENCODER,
-                         FL, FR, BL, BR, LL, RL, PU, V,
-                         LLL, LRL, LA, RA, LH, RH, K, KA, R,
-                         new double[]{1, 0.1, 0.1},
-                         new double[]{0.1, 0.1, 0.1});
+        Initialize(DcMotor.RunMode.RUN_WITHOUT_ENCODER, new double[]{0, 0},
+                                                        new double[]{0, 0, 0, 0});
         imu.resetYaw();
 
         // Initialize TensorFlow Object Detection (TFOD)
@@ -79,18 +62,18 @@ public class Auto extends Robot {
         builder.setCamera(hardwareMap.get(WebcamName.class, "Webcam 1"));
 
         // Choose a camera resolution. Not all cameras support all resolutions.
-        //builder.setCameraResolution(new Size(640, 480));
+        builder.setCameraResolution(new Size(640, 480));
 
         // Enable the RC preview (LiveView).  Set "false" to omit camera monitoring.
-        //builder.enableLiveView(true);
+        builder.enableLiveView(true);
 
         // Set the stream format; MJPEG uses less bandwidth than default YUY2.
-        //builder.setStreamFormat(VisionPortal.StreamFormat.YUY2);
+        builder.setStreamFormat(VisionPortal.StreamFormat.YUY2);
 
         // Choose whether or not LiveView stops if no processors are enabled.
         // If set "true", monitor shows solid orange screen if no processors enabled.
         // If set "false", monitor shows camera view without annotations.
-        //builder.setAutoStopLiveView(false);
+        builder.setAutoStopLiveView(false);
 
         // Set and enable the processor.
         builder.addProcessor(tfod);

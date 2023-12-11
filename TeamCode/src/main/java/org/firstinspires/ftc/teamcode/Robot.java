@@ -18,8 +18,8 @@ import com.qualcomm.robotcore.util.Range;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 
 public abstract class Robot extends LinearOpMode {
-    IMU Imu;
-    Servo LLL, LRL, LA, RA, LH, RH, K, KA, R;
+    IMU imu;
+    Servo LA, RA, LH, RH, IT, DP, ADP, R;
     DcMotorEx FL, FR, BL, BR, LL, RL, PU, V;
     public int FL_Target, FR_Target, BL_Target, BR_Target;
     public final double[] tileSize            = {23.5, 23.5};  // Width * Length
@@ -139,7 +139,7 @@ public abstract class Robot extends LinearOpMode {
         ElapsedTime runtime = new ElapsedTime();
         runtime.reset();
         while (opModeIsActive()) {
-            double yaw = -Imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);
+            double yaw = -imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);
             double x2 = (Math.cos(heading) * x1) - (Math.sin(heading) * y1);
             double y2 = (Math.sin(heading) * x1) + (Math.cos(heading) * y1);
             // Rotate
@@ -158,7 +158,7 @@ public abstract class Robot extends LinearOpMode {
     public void Turn(double degs, double stopSecond) {
         double rads = Math.toRadians(degs);
         while (opModeIsActive()) {
-            double yaw   = -Imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);
+            double yaw   = -imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);
             double error = WrapRads(rads - yaw);
             double r     = AtTargetRange(error, 0, Math.toRadians(30)) ? 0.2 : 0.6;
             if (error < 0) r = -r;
@@ -170,39 +170,32 @@ public abstract class Robot extends LinearOpMode {
         heading = rads;
     }
 
-    public void Initialize(IMU imu, DcMotor.RunMode moveMode,
-                           DcMotorEx motor1, DcMotorEx motor2, DcMotorEx motor3, DcMotorEx motor4,
-                           DcMotorEx motor5, DcMotorEx motor6, DcMotorEx motor7, DcMotorEx motor8,
-                           Servo servo1, Servo servo2, Servo servo3, Servo servo4, Servo servo5,
-                           Servo servo6, Servo servo7, Servo servo8, Servo servo9,
-                           double[] DuoServoAng, double[] ServoAng) {
-        // Add Variable
-        Imu = imu;
-        FL  = motor1; FR  = motor2; BL  = motor3; BR  = motor4;
-        LL  = motor5; RL  = motor6; PU  = motor7; V   = motor8;
-        LLL = servo1; LRL = servo2; LA  = servo3; RA  = servo4;
-        LH  = servo5; RH  = servo6; K   = servo7; KA  = servo8;
-        R   = servo9;
+    public void Initialize(DcMotor.RunMode moveMode, double[] DuoServoAng, double[] ServoAng) {
+        imu = hardwareMap.get(IMU.class,       "imu");
+        FL  = hardwareMap.get(DcMotorEx.class, "Front_Left");    FR  = hardwareMap.get(DcMotorEx.class, "Front_Right");
+        BL  = hardwareMap.get(DcMotorEx.class, "Back_Left");     BR  = hardwareMap.get(DcMotorEx.class, "Back_Right");
+        LL  = hardwareMap.get(DcMotorEx.class, "Left_Lift");     RL  = hardwareMap.get(DcMotorEx.class, "Right_Lift");
+        PU  = hardwareMap.get(DcMotorEx.class, "Pull_Up");       V   = hardwareMap.get(DcMotorEx.class, "Vacuum");
+        LA  = hardwareMap.get(Servo.class,     "Left_Arm");      RA  = hardwareMap.get(Servo.class,     "Right_Arm");
+        LH  = hardwareMap.get(Servo.class,     "Left_Hoist");    RH  = hardwareMap.get(Servo.class,     "Right_Hoist");
+        IT  = hardwareMap.get(Servo.class,     "InTake");        DP  = hardwareMap.get(Servo.class,     "Dropper");
+        ADP = hardwareMap.get(Servo.class,     "AdjustDropper"); R   = hardwareMap.get(Servo.class,     "Rocket");
 
         // Initialize IMU
-        Imu.initialize(new IMU.Parameters(new RevHubOrientationOnRobot(
+        imu.initialize(new IMU.Parameters(new RevHubOrientationOnRobot(
                 RevHubOrientationOnRobot.LogoFacingDirection.BACKWARD,
                 RevHubOrientationOnRobot.UsbFacingDirection.RIGHT)));
 
         // Reverse Servo
-        LRL.setDirection(Servo.Direction.REVERSE);
         LA .setDirection(Servo.Direction.REVERSE);
         LH .setDirection(Servo.Direction.REVERSE);
-        K  .setDirection(Servo.Direction.REVERSE);
-        KA .setDirection(Servo.Direction.REVERSE);
-        R  .setDirection(Servo.Direction.REVERSE);
         // Set Servo Position
-        SetDuoServoPos(DuoServoAng[0], LLL, LRL);
-        SetDuoServoPos(DuoServoAng[1], LA,  RA);
-        SetDuoServoPos(DuoServoAng[2], LH,  RH);
-        SetServoPos(ServoAng[0], K);
-        SetServoPos(ServoAng[1], KA);
-        SetServoPos(ServoAng[2], R);
+        SetDuoServoPos(DuoServoAng[0], LA,  RA);
+        SetDuoServoPos(DuoServoAng[1], LH,  RH);
+        SetServoPos(ServoAng[0], IT);
+        SetServoPos(ServoAng[1], DP);
+        SetServoPos(ServoAng[2], ADP);
+        SetServoPos(ServoAng[3], R);
         // Reverse Motors
         FL.setDirection(DcMotorSimple.Direction.REVERSE);
         BL.setDirection(DcMotorSimple.Direction.REVERSE);
@@ -218,19 +211,19 @@ public abstract class Robot extends LinearOpMode {
         PU.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         V .setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         // SetBehavior Motors
-        motor1.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        motor2.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        motor3.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        motor4.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        motor5.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        motor6.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        motor7.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        motor8.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        FL.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        FR.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        BL.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        BR.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        LL.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        RL.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        PU.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        V .setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         // SetPower Motors
         MovePower(0, 0, 0, 0);
-        motor5.setPower(0);
-        motor6.setPower(0);
-        motor7.setPower(0);
-        motor8.setPower(0);
+        LL.setPower(0);
+        RL.setPower(0);
+        PU.setPower(0);
+        V .setPower(0);
     }
 }
