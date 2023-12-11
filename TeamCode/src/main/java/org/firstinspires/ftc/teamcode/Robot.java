@@ -43,7 +43,7 @@ public abstract class Robot extends LinearOpMode {
     }
 
     public void MovePower(double Front_Left, double Front_Right,
-                                 double Back_Left,  double Back_Right) {
+                          double Back_Left,  double Back_Right) {
         FL.setPower(Front_Left);
         FR.setPower(Front_Right);
         BL.setPower(Back_Left);
@@ -62,7 +62,7 @@ public abstract class Robot extends LinearOpMode {
     }
 
     public void MoveTargetPosition(double FL_Inches, double FR_Inches,
-                                          double BL_Inches, double BR_Inches) {
+                                   double BL_Inches, double BR_Inches) {
         FL_Target = FL.getCurrentPosition() + ((int) (FL_Inches * Counts_per_Inch));
         FR_Target = FR.getCurrentPosition() + ((int) (FR_Inches * Counts_per_Inch));
         BL_Target = BL.getCurrentPosition() + ((int) (BL_Inches * Counts_per_Inch));
@@ -77,14 +77,14 @@ public abstract class Robot extends LinearOpMode {
         BR.setTargetPosition(BR_Target);
     }
 
-    public double SetDuoServoPos(double pos, float[] minMax, Servo L_servo, Servo R_servo) {
+    public double SetServoPos(double pos, float[] minMax, Servo L_servo, Servo R_servo) {
         pos = Range.clip(pos, minMax[0], minMax[1]);
         L_servo.setPosition(pos);
         R_servo.setPosition(pos);
         return pos;
     }
 
-    public double SetDuoServoPos(double pos, Servo L_servo, Servo R_servo) {
+    public double SetServoPos(double pos, Servo L_servo, Servo R_servo) {
         pos = Range.clip(pos, 0, 1);
         L_servo.setPosition(pos);
         R_servo.setPosition(pos);
@@ -147,7 +147,7 @@ public abstract class Robot extends LinearOpMode {
             // Denominator for division to get no more than 1
             double d = Math.max(Math.abs(x2) + Math.abs(y2) + Math.abs(r), 1);
             MovePower((y2 + x2 + r) / d, (y2 - x2 - r) / d,
-                             (y2 - x2 + r) / d,  (y2 + x2 - r) / d);
+                       (y2 - x2 + r) / d,  (y2 + x2 - r) / d);
 
             if (((runtime.seconds() >= timeOut) && (timeOut != 0)) || !MoveisBusy()) break;
         }
@@ -184,14 +184,15 @@ public abstract class Robot extends LinearOpMode {
         // Initialize IMU
         imu.initialize(new IMU.Parameters(new RevHubOrientationOnRobot(
                 RevHubOrientationOnRobot.LogoFacingDirection.BACKWARD,
-                RevHubOrientationOnRobot.UsbFacingDirection.RIGHT)));
+                RevHubOrientationOnRobot.UsbFacingDirection .RIGHT)));
 
         // Reverse Servo
-        LA .setDirection(Servo.Direction.REVERSE);
+        RA .setDirection(Servo.Direction.REVERSE);
         LH .setDirection(Servo.Direction.REVERSE);
+        ADP.setDirection(Servo.Direction.REVERSE);
         // Set Servo Position
-        SetDuoServoPos(DuoServoAng[0], LA,  RA);
-        SetDuoServoPos(DuoServoAng[1], LH,  RH);
+        SetServoPos(DuoServoAng[0], LA, RA);
+        SetServoPos(DuoServoAng[1], LH, RH);
         SetServoPos(ServoAng[0], IT);
         SetServoPos(ServoAng[1], DP);
         SetServoPos(ServoAng[2], ADP);
@@ -199,7 +200,6 @@ public abstract class Robot extends LinearOpMode {
         // Reverse Motors
         FL.setDirection(DcMotorSimple.Direction.REVERSE);
         BL.setDirection(DcMotorSimple.Direction.REVERSE);
-        LL.setDirection(DcMotorSimple.Direction.REVERSE);
         PU.setDirection(DcMotorSimple.Direction.REVERSE);
         // setMode Motors
         MoveMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -217,7 +217,7 @@ public abstract class Robot extends LinearOpMode {
         BR.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         LL.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         RL.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        PU.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        PU.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
         V .setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         // SetPower Motors
         MovePower(0, 0, 0, 0);

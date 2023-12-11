@@ -14,13 +14,13 @@ import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 @TeleOp(name="Tele")
 public class Tele extends Robot {
     /** Variables */
-    double setpoint = Math.toDegrees(0.1), PUPow = 0.1, armAng = 0.1, hoistAng = 0.1, keepAng = 0.1, keepArmAng = 0.1, rocketAng = 0.1;
+    double setpoint = Math.toRadians(0), PUPow = 0, armAng = 0, adjustAng = 0.1;
     boolean VPressed = false, VisBusy = false;
 
     private void Init() {
         // Initialize Robot
-        Initialize(DcMotor.RunMode.RUN_WITHOUT_ENCODER, new double[]{0, 0},
-                                                        new double[]{0, 0, 0, 0});
+        Initialize(DcMotor.RunMode.RUN_WITHOUT_ENCODER, new double[]{armAng, 0},
+                                                        new double[]{0, 0, adjustAng, 0});
 
         // Show FTC Dashboard
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
@@ -33,16 +33,16 @@ public class Tele extends Robot {
         double x2  =  (Math.cos(yaw) * x1) - (Math.sin(yaw) * y1);
         double y2  =  (Math.sin(yaw) * x1) + (Math.cos(yaw) * y1);
         // Rotate
-        double r =  new Controller(1.6, 0.01, 0.09, 0).Calculate(WrapRads(setpoint - yaw));
+        double r =  new Controller(1.6, 0.01, 0.09, 0).Calculate(WrapRads(setpoint + yaw));
         double x = -gamepad1.right_stick_x;
         if (x != 0) {
             r = x;
-            setpoint = yaw;
+            setpoint = -yaw;
         }
         // Denominator for division to get no more than 1
         double d = Math.max(Math.abs(x2) + Math.abs(y2) + Math.abs(r), 1);
         MovePower((y2 + x2 + r) / d, (y2 - x2 - r) / d,
-                        (y2 - x2 + r) / d,  (y2 + x2 - r) / d);
+                   (y2 - x2 + r) / d,  (y2 + x2 - r) / d);
         telemetry.addData("yaw", Math.toDegrees(yaw));
     }
 
@@ -80,24 +80,20 @@ public class Tele extends Robot {
         double armSp = 0.02;
         armAng = gamepad1.dpad_left  ? armAng + armSp :
                  gamepad1.dpad_right ? armAng - armSp : armAng;
-        armAng = SetDuoServoPos(armAng, LA, RA);
+        armAng = SetServoPos(armAng, LA, RA);
+        telemetry.addData("armAng", armAng);
     }
 
-    private void Hoist() {
-        double hoistSp = 0.01;
-        hoistAng = gamepad1.dpad_up   ? hoistAng + hoistSp :
-                   gamepad1.dpad_down ? hoistAng - hoistSp : hoistAng;
-        hoistAng = SetDuoServoPos(hoistAng, LH, RH);
-    }
-
-    private void Rocket(){
-        double rocketSp = 0.01;
-        rocketAng = gamepad2.square  ? rocketAng + rocketSp :
-                  gamepad2.circle  ? rocketAng - rocketSp : rocketAng;
-        rocketAng = SetServoPos(rocketAng, R);
+    private void Adjust() {
+        double adjustSp = 0.02;
+        adjustAng = gamepad1.dpad_up   ? adjustAng + adjustSp :
+                    gamepad1.dpad_down ? adjustAng - adjustSp : adjustAng;
+        adjustAng = SetServoPos(adjustAng, ADP);
+        telemetry.addData("adjustAng", adjustAng);
     }
 
     private void Lift() {
+        double curPos = Math.max(LL.getCurrentPosition(), RL.getCurrentPosition());
         double LL = gamepad1.left_trigger;
         double RL = gamepad1.right_trigger;
         double Lift_Power = LL >= 0.25 ? LL : RL >= 0.25 ? -RL : 0.05;
@@ -118,19 +114,11 @@ public class Tele extends Robot {
                 Vacuum();     
                 Lift();
                 Arm();
-                Hoist();
+                Adjust();
                 PullUp();
-                Rocket();
                 telemetry.addData("setpoint",Math.toDegrees(setpoint));
-                telemetry.addData("LL", LL.getCurrentPosition());
-                telemetry.addData("RL", RL.getCurrentPosition());
-                telemetry.addData("FL", FL.getCurrentPosition());
-                telemetry.addData("FR", FR.getCurrentPosition());
                 telemetry.addData("BL", BL.getCurrentPosition());
                 telemetry.addData("BR", BR.getCurrentPosition());
-                telemetry.addData("keep", keepAng);
-                telemetry.addData("keep_Arm", keepArmAng);
-                telemetry.addData("Rocket", rocketAng);
                 telemetry.update();
             }
         }
