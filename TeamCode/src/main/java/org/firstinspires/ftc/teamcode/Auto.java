@@ -54,9 +54,13 @@ public class Auto extends Robot {
         WaitForStart();
         visionPortal.close();
         if (opModeIsActive()) {
+            Move(0.6, 4.75, 0.23, 0, 1, 0.25, 0);
             if (signalPos == 'M') {
-
+                V.setPower(0.4);
+                Break(0.1);
+                V.setPower(0);
             }
+            Turn(-90, 0.25);
         }
     }
 }

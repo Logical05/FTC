@@ -33,6 +33,7 @@ public class Tele extends Robot {
         double speed =  0.5;
         double lx    = -gamepad1.left_stick_x;
         double ly    =  gamepad1.left_stick_y;
+
         double x1    =  gamepad1.dpad_up   ? -speed : gamepad1.dpad_down  ?  speed : lx;
         double y1    =  gamepad1.dpad_left ?  speed : gamepad1.dpad_right ? -speed : ly;
         double yaw   = -imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);

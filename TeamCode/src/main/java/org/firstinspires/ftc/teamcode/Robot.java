@@ -177,7 +177,7 @@ public abstract class Robot extends LinearOpMode {
                       (y2 - x2 + r) / d, (y2 + x2 - r) / d);
 
             if (((runtime.seconds() >= timeOut) && (timeOut != 0)) || !MoveisBusy() ||
-                    colors.red() >= 0 ) break;
+                ((colors.blue() >= 6000 || colors.red() >= 5500) && colors.green() <= 3500)) break;
         }
         Break(stopSecond);
         currentXY = new double[]{0, 0};
