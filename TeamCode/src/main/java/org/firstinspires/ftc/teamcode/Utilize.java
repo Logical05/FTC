@@ -6,14 +6,14 @@ public class Utilize {
     }
 
     public static double WrapRads(double rads) {
-        if (rads >   Math.PI) return rads - (2 * Math.PI);
-        if (rads <= -Math.PI) return rads + (2 * Math.PI);
+        if (rads >  Math.PI) return rads - (2 * Math.PI);
+        if (rads < -Math.PI) return rads + (2 * Math.PI);
         return rads;
     }
 
     public static double WrapDegs(double degs) {
-        if (degs >   180) return degs - 360;
-        if (degs <= -180) return degs + 360;
+        if (degs >  180) return degs - 360;
+        if (degs < -180) return degs + 360;
         return degs;
     }
 
@@ -31,5 +31,12 @@ public class Utilize {
 
     public static byte SigNum(double number) {
         return (byte) (number == 0 ? 0 : (number < 0 ? -1 : 1));
+    }
+
+    public static double[] XY2Base(double base, double x, double y) {
+        double absX = Math.abs(x);
+        double absY = Math.abs(y);
+        return new double[]{absX > absY ? base : (x / absY) * base,
+                            absX < absY ? base : (y / absX) * base};
     }
 }
