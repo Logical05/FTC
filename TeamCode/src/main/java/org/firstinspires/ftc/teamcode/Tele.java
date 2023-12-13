@@ -15,32 +15,30 @@ import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 @TeleOp(name="Tele")
 public class Tele extends Robot {
     // Variables
-    int hoistLevel = 0, targetLift = 0;
-    double setpoint = 0, PU_Pow = 0, armAng = 0, AD_Ang = 0, AL_Ang = 0;
-    boolean V_Pressed = false, VisBusy = false, rb_Pressed = false, dl_Pressed = false, DisOn = false,
-            dr_Pressed = false, ITisOn = false, autoLift = false;
+    int targetLift = 0;
+    double setpoint = 0, H_Ang = 0, AL_Ang = 0, AD_Ang = 0;
+    boolean autoLift = false, V_Pressed = false, VisBusy = false;
 
     private void Init() {
         // Initialize Robot
-        Initialize(DcMotor.RunMode.RUN_WITHOUT_ENCODER, new double[]{armAng, 0, AL_Ang},
-                                                        new double[]{0, 0, AD_Ang, 0});
+        Initialize(DcMotor.RunMode.RUN_WITHOUT_ENCODER, new double[]{0, 0, 0},
+                                                        new double[]{0, 0, 0, 0});
 
         // Show FTC Dashboard
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
     }
 
     private void Movement() {
-        double speed =  0.5;
+        double speed =  0.35;
         double lx    = -gamepad1.left_stick_x;
         double ly    =  gamepad1.left_stick_y;
-
-        double x1    =  gamepad1.dpad_up   ? -speed : gamepad1.dpad_down  ?  speed : lx;
-        double y1    =  gamepad1.dpad_left ?  speed : gamepad1.dpad_right ? -speed : ly;
+        double x1    =  gamepad1.dpad_left ?  speed : gamepad1.dpad_right ? -speed : lx;
+        double y1    =  gamepad1.dpad_up   ? -speed : gamepad1.dpad_down  ? speed : ly;
         double yaw   = -imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);
         double x2    =  (Math.cos(yaw) * x1) - (Math.sin(yaw) * y1);
         double y2    =  (Math.sin(yaw) * x1) + (Math.cos(yaw) * y1);
         // Rotate
-        double r = new Controller(1.6, 0.01, 0.09, 0).Calculate(WrapRads(setpoint - yaw));
+        double r = new Controller(1.6, 0.01, 0.01, 0).Calculate(WrapRads(setpoint - yaw));
         double x = gamepad1.right_stick_x;
         if (x != 0) {
             r = x;
@@ -53,52 +51,19 @@ public class Tele extends Robot {
         telemetry.addData("yaw", Math.toDegrees(yaw));
     }
 
-    private void PullUp() {
-        double LL = gamepad1.left_trigger;
-        double RL = gamepad1.right_trigger;
-        double pullPow = LL >= 0.25 ? -LL :
-                         RL >= 0.25 ?  RL : PU_Pow;
-        PU.setPower(pullPow);
-    }
-
-    private void Rocket() { if (gamepad1.triangle) SetServoPos(0.2, R); }
-
-    private void Hoist() {
-        switch (hoistLevel) {
-            case 1:
-                SetServoPos(0.5, LH, RH);
-                break;
-            case 2:
-                SetServoPos(0.75, LH, RH);
-                break;
-            case 3:
-                SetServoPos(0, LH, RH);
-                PU_Pow = 0.1;
-                break;
-            default:
-                break;
-        }
-        boolean rb = gamepad1.right_bumper;
-        if (!rb) {
-            rb_Pressed = false;
-            return;
-        }
-        if (rb_Pressed) return;
-        rb_Pressed = true;
-        hoistLevel++;
-    }
+    private void Rocket() { if (gamepad1.touchpad) SetServoPos(0.2, R); }
 
     private void Vacuum() {
-        boolean sq = gamepad1.square;
-        boolean ci = gamepad1.circle;
-        if (!(sq || ci)) {
+        boolean lt = gamepad1.left_trigger  >= 0.25;
+        boolean rt = gamepad1.right_trigger >= 0.25;
+        if (!(lt || rt)) {
             V_Pressed = false;
             return;
         }
         if (V_Pressed) return;
         V_Pressed = true;
         if (!VisBusy) {
-            double pow = sq ? 0.8 : -0.8;
+            double pow = rt ? 0.7 : -0.7;
             V.setPower(pow);
             VisBusy = true;
             return;
@@ -107,11 +72,29 @@ public class Tele extends Robot {
         VisBusy = false;
     }
 
-    private void Arm() {
-        double armSp = 0.02;
-        armAng = gamepad2.y ? armAng + armSp :
-                 gamepad2.a ? armAng - armSp : armAng;
-        armAng = SetServoPos(armAng, LA, RA);
+    private void Dropper() {
+        if (gamepad2.right_stick_button) {
+            SetServoPos(0, IT);
+            SetServoPos(0.2, DP);
+        }
+    }
+
+    private void PullUp() {
+        double pullPow = gamepad2.dpad_up   ? -1   :
+                         gamepad2.dpad_down ?  0.5 : 0;
+        PU.setPower(pullPow);
+    }
+
+    private void Hoist() {
+        double rs = gamepad2.right_stick_x;
+        H_Ang     = rs >=  0.1 || rs <= -0.1 ? H_Ang + (rs / 100) : H_Ang;
+        H_Ang     = SetServoPos(H_Ang, new float[]{0f, 0.75f}, LH, RH);
+    }
+
+    private void AdjustDrop() {
+        double ls = gamepad2.left_stick_x;
+        AD_Ang    = ls >=  0.1 || ls <= -0.1 ? AD_Ang + (ls / 100) : AD_Ang;
+        AD_Ang    = SetServoPos(AD_Ang, ADP);
     }
 
     private void AdjustLift() {
@@ -121,72 +104,39 @@ public class Tele extends Robot {
         AL_Ang = SetServoPos(AL_Ang, new float[]{0f, 0.34f}, ALL, ARL);
     }
 
-    private void AdjustDrop() {
-        double AD_Sp = 0.05;
-        AD_Ang = gamepad2.dpad_down ? AD_Ang + AD_Sp :
-                 gamepad2.dpad_up   ? AD_Ang - AD_Sp : AD_Ang;
-        AD_Ang = SetServoPos(AD_Ang, ADP);
-    }
-
-    private void Dropper() {
-        boolean dl = gamepad2.b;
-        if (!(dl)) {
-            dl_Pressed = false;
-            return;
-        }
-        if (dl_Pressed) return;
-        dl_Pressed = true;
-        if (!DisOn) {
-            SetServoPos(0.2, DP);
-            DisOn = true;
-            return;
-        }
-        SetServoPos(0, DP);
-        DisOn = false;
-    }
-
-    private void Intake() {
-        boolean dr = gamepad2.x;
-        if (!(dr)) {
-            dr_Pressed = false;
-            return;
-        }
-        if (dr_Pressed) return;
-        dr_Pressed = true;
-        if (!ITisOn) {
-            SetServoPos(0.45, IT);
-            ITisOn = true;
-            return;
-        }
-        SetServoPos(0, IT);
-        ITisOn = false;
-    }
-
     private void Lift() {
         double  curPos     = Math.max(LL.getCurrentPosition(), RL.getCurrentPosition());
-        double  LL         = gamepad2.left_trigger;
-        double  RL         = gamepad2.right_trigger;
-        boolean LL_Pressed = LL >= 0.25;
-        boolean RL_Pressed = RL >= 0.25;
-        if (curPos <= 100 && RL_Pressed) {
-            SetServoPos(0.2, LA, RA);
-        }
-        if (gamepad2.start) {
-            SetServoPos(0, ADP);
-            SetServoPos(0.2, LA, RA);
-            SetServoPos(0, IT, DP);
+        double  lt         = gamepad2.left_trigger;
+        double  rl         = gamepad2.right_trigger;
+        boolean lt_Pressed = lt >= 0.25;
+        boolean rl_Pressed = rl >= 0.25;
+        boolean x = gamepad2.x;
+        boolean y = gamepad2.y;
+        boolean b = gamepad2.b;
+        boolean a = gamepad2.a;
+        if (x || y || b || a) {
+            if (!a) SetServoPos(0.3, IT);
+            targetLift      = x      ? 700  :
+                              y      ? 1600 :
+                              b      ? 2030 : 0;
+            double LARA_pos = a      ? 0.2  : 0.92;
+            AD_Ang          = a      ? 0    : 0.38;
+            AL_Ang          = x || a ? 0    : 0.2;
+            SetServoPos(AL_Ang, ALL, ARL);
+            SetServoPos(LARA_pos, LA, RA);
+            SetServoPos(AD_Ang, ADP);
+            if (a) SetServoPos(0, DP, IT);
             autoLift = true;
-            targetLift = 0;
         }
-        if (autoLift && targetLift == 0 && curPos <= 100){
+        if (autoLift && targetLift == 0 && curPos <= 10){
             SetServoPos(0, LA, RA);
         }
-        if ((autoLift && AtTargetRange(curPos, targetLift, 10)) || (LL_Pressed || RL_Pressed)) {
+        if ((autoLift && AtTargetRange(curPos, targetLift, 10)) || (lt_Pressed || rl_Pressed)) {
             autoLift = false;
         }
-        double Lift_Power = LL_Pressed ? (curPos < 0          ?  0   : -LL) :
-                            RL_Pressed ? (curPos > 2550       ?  0   :  RL) :
-                            autoLift   ? (curPos > targetLift ? -0.5 : 0.5) : 0;
+        double Lift_Power = lt_Pressed ? (curPos < 0          ?  0   : -lt) :
+                            rl_Pressed ? (curPos > 3000       ?  0   :  rl) :
+                            autoLift   ? (curPos > targetLift ? -0.2 :  1)  : 0;
         LiftPower(Lift_Power);
     }
 
@@ -204,19 +154,18 @@ public class Tele extends Robot {
                 PullUp();
                 Rocket();
                 Hoist();
-                Arm();
-                AdjustLift();
                 AdjustDrop();
+                AdjustLift();
                 Dropper();
-                Intake();
                 Lift();
                 Vacuum();
                 telemetry.addData("setpoint",Math.toDegrees(setpoint));
                 telemetry.addData("LL", LL.getCurrentPosition());
                 telemetry.addData("RL", RL.getCurrentPosition());
-                telemetry.addData("armAng", armAng);
-                telemetry.addData("AL_Ang", AL_Ang);
-                telemetry.addData("AD_Ang", AD_Ang);
+                telemetry.addData("FL", FL.getCurrentPosition());
+                telemetry.addData("FR", FR.getCurrentPosition());
+                telemetry.addData("BL", BL.getCurrentPosition());
+                telemetry.addData("BR", BR.getCurrentPosition());
                 telemetry.update();
             }
         }

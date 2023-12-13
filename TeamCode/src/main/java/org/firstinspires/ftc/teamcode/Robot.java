@@ -126,8 +126,8 @@ public abstract class Robot extends LinearOpMode {
 
     public void Move(double power, double kp, double ki, double tileX, double tileY,
                      double stopSecond, double timeOut) {
-        double   x        = tileX - currentXY[0];
-        double   y        = tileY - currentXY[1];
+        double   x        = -tileX - currentXY[0];
+        double   y        = -tileY - currentXY[1];
         double[] xy1      = XY2Base(power, x, y);
         double[] inchesXY = CalInchesDirection(x, y);
         double   FL_BR_In = inchesXY[1] + inchesXY[0];
@@ -146,10 +146,10 @@ public abstract class Robot extends LinearOpMode {
         runtime.reset();
         while (opModeIsActive()) {
             double yaw = -imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);
-            double x2  = (Math.cos(yaw) * xy1[0]) - (Math.sin(yaw) * xy1[1]);
-            double y2  = (Math.sin(yaw) * xy1[0]) + (Math.cos(yaw) * xy1[1]);
+            double x2  = (Math.cos(heading) * xy1[0]) - (Math.sin(heading) * xy1[1]);
+            double y2  = (Math.sin(heading) * xy1[0]) + (Math.cos(heading) * xy1[1]);
             // Rotate
-            double r = pidR.Calculate(WrapRads(heading - yaw));
+            double r = pidR.Calculate(WrapRads(yaw - heading));
             // Denominator for division to get no more than 1
             double d = Math.max(Math.abs(x2) + Math.abs(y2) + Math.abs(r), 1);
             MovePower((y2 + x2 + r) / d, (y2 - x2 - r) / d,
@@ -158,7 +158,7 @@ public abstract class Robot extends LinearOpMode {
             if (((runtime.seconds() >= timeOut) && (timeOut != 0)) || !MoveisBusy()) break;
         }
         Break(stopSecond);
-        currentXY = new double[]{tileX, tileY};
+        currentXY = new double[]{-tileX, -tileY};
     }
 
     public void MoveColor(double powerX, double powerY, double stopSecond, double timeOut) {
@@ -167,8 +167,8 @@ public abstract class Robot extends LinearOpMode {
         runtime.reset();
         while (opModeIsActive()) {
             double yaw = -imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);
-            double x2  = (Math.cos(yaw) * powerX) - (Math.sin(yaw) * powerY);
-            double y2  = (Math.sin(yaw) * powerX) + (Math.cos(yaw) * powerY);
+            double x2  = (Math.cos(heading) * powerX) - (Math.sin(heading) * powerY);
+            double y2  = (Math.sin(heading) * powerX) + (Math.cos(heading) * powerY);
             // Rotate
             double r = pidR.Calculate(WrapRads(heading - yaw));
             // Denominator for division to get no more than 1
@@ -176,11 +176,10 @@ public abstract class Robot extends LinearOpMode {
             MovePower((y2 + x2 + r) / d, (y2 - x2 - r) / d,
                       (y2 - x2 + r) / d, (y2 + x2 - r) / d);
 
-            if (((runtime.seconds() >= timeOut) && (timeOut != 0)) || !MoveisBusy() ||
-                ((colors.blue() >= 6000 || colors.red() >= 5500) && colors.green() <= 3500)) break;
+            if (((runtime.seconds() >= timeOut) && (timeOut != 0)) ||
+                ((colors.blue() >= 6000 || colors.red() >= 3700) && colors.green() <= 3500)) break;
         }
         Break(stopSecond);
-        currentXY = new double[]{0, 0};
     }
 
     public void Turn(double degs, double stopSecond) {

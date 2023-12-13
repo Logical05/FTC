@@ -6,16 +6,13 @@ import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.hardware.DcMotor;
 
-import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
-import org.firstinspires.ftc.vision.VisionPortal;
-import org.firstinspires.ftc.vision.tfod.TfodProcessor;
 
 import java.util.List;
 
 @Config
-@Autonomous(name="Auto")
-public class Auto extends Robot {
+@Autonomous(name="AutoRed")
+public class AutoRed extends Robot {
     private char signalPos;
 
     private void Init() {
@@ -25,7 +22,7 @@ public class Auto extends Robot {
         imu.resetYaw();
 
         // Initialize TensorFlow Object Detection (TFOD)
-        TfodInit("Webcam 1", "Signal.tflite", new String[]{"Signal"}, 0.75f);
+        TfodInit("Webcam 1", "Signal.tflite", new String[]{"Signal"}, 0.7f);
 
         // Show FTC Dashboard
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
@@ -33,11 +30,11 @@ public class Auto extends Robot {
 
     private void WaitForStart() {
         while (!isStarted() && !isStopRequested()) {
-            signalPos = 'L';
+            signalPos = 'R';
             List<Recognition> currentRecognitions = tfod.getRecognitions();
             for (Recognition recognition : currentRecognitions) {
                 double x = (recognition.getLeft() + recognition.getRight()) / 2;
-                signalPos = x < 320 ? 'M'  : 'R';
+                signalPos = x < 320 ? 'L'  : 'M';
                 telemetry.addData("Position", "%.0f", x);
             }
             telemetry.addData("SignalPos", signalPos);
@@ -48,19 +45,29 @@ public class Auto extends Robot {
         }
     }
 
+    private void Drop() {
+        V.setPower(-0.4);
+        Break(1);
+        V.setPower(0);
+    }
+
     @Override
     public void runOpMode() {
         Init();
         WaitForStart();
         visionPortal.close();
         if (opModeIsActive()) {
-            Move(0.6, 4.75, 0.23, 0, 1, 0.25, 0);
+            Move(0.5, 4.5, 0.23, 0, 1, 0.25, 0);
             if (signalPos == 'M') {
-                V.setPower(0.4);
-                Break(0.1);
-                V.setPower(0);
+                Drop();
             }
             Turn(-90, 0.25);
+            Move(0.35, 4.5, 0.23, 0, 1.18, 0.25, 0);
+            if (signalPos == 'L') {
+                Drop();
+            }
+            Move(0.9, 4.5, 0.23, 3.1, 1.18, 0.25, 0);
+//            Move(0.5, 4.75, 0.23, -1, 0, 0.25, 0);
         }
     }
 }
