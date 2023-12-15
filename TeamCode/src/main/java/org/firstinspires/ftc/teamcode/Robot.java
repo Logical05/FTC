@@ -25,11 +25,10 @@ public abstract class Robot extends LinearOpMode {
     public IMU imu;
     public TfodProcessor tfod;
     public VisionPortal visionPortal;
-    public ColorSensor colors;
     public Servo LA, RA, LH, RH, ALL, ARL, IT, DP, ADP, R;
     public DcMotorEx FL, FR, BL, BR, LL, RL, PU, V;
     public int FL_Target, FR_Target, BL_Target, BR_Target;
-    public final double[] tileSize            = {23.5, 23.5};  // Width * Length
+    public final double[] tileSize            = {24, 24};  // Width * Length
     /** TETRIX Motor Encoder per revolution */
     public final int      Counts_per_TETRIX   = 24;
     /** HD HEX Motor Encoder per revolution */
@@ -38,7 +37,7 @@ public abstract class Robot extends LinearOpMode {
     public final int      Gear_20_HD_HEX      = Counts_per_HD_HEX * 20;
     /** (3 * 4 * 5):1 UltraPlanetary HD HEX Motor Encoder per revolution */
     public final double   Gear_60_HD_HEX      = Counts_per_HD_HEX * 54.8;
-    public final double   Wheel_Diameter_Inch = 3;
+    public final double   Wheel_Diameter_Inch = 7.5/2.54;
     public final double   Counts_per_Inch     = Gear_20_HD_HEX / (Wheel_Diameter_Inch * Math.PI);
     public double         heading             = 0;
     public double[]       currentXY           = {0, 0};
@@ -119,9 +118,8 @@ public abstract class Robot extends LinearOpMode {
     private double[] CalInchesDirection(double x, double y) {
         double inchesX =  tileSize[0] * x;
         double inchesY =  tileSize[1] * y;
-        double yaw     = -imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);
-        return new double[]{(Math.cos(yaw) * inchesX) - (Math.sin(yaw) * inchesY),
-                            (Math.sin(yaw) * inchesX) + (Math.cos(yaw) * inchesY)};
+        return new double[]{(Math.cos(heading) * inchesX) - (Math.sin(heading) * inchesY),
+                            (Math.sin(heading) * inchesX) + (Math.cos(heading) * inchesY)};
     }
 
     public void Move(double power, double kp, double ki, double tileX, double tileY,
@@ -149,7 +147,7 @@ public abstract class Robot extends LinearOpMode {
             double x2  = (Math.cos(heading) * xy1[0]) - (Math.sin(heading) * xy1[1]);
             double y2  = (Math.sin(heading) * xy1[0]) + (Math.cos(heading) * xy1[1]);
             // Rotate
-            double r = pidR.Calculate(WrapRads(yaw - heading));
+            double r = pidR.Calculate(WrapRads(yaw + heading));
             // Denominator for division to get no more than 1
             double d = Math.max(Math.abs(x2) + Math.abs(y2) + Math.abs(r), 1);
             MovePower((y2 + x2 + r) / d, (y2 - x2 - r) / d,
@@ -159,27 +157,6 @@ public abstract class Robot extends LinearOpMode {
         }
         Break(stopSecond);
         currentXY = new double[]{-tileX, -tileY};
-    }
-
-    public void MoveColor(double powerX, double powerY, double stopSecond, double timeOut) {
-        Controller  pidR    = new Controller(1.6, 0.01, 0.09, 0);
-        ElapsedTime runtime = new ElapsedTime();
-        runtime.reset();
-        while (opModeIsActive()) {
-            double yaw = -imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);
-            double x2  = (Math.cos(heading) * powerX) - (Math.sin(heading) * powerY);
-            double y2  = (Math.sin(heading) * powerX) + (Math.cos(heading) * powerY);
-            // Rotate
-            double r = pidR.Calculate(WrapRads(heading - yaw));
-            // Denominator for division to get no more than 1
-            double d = Math.max(Math.abs(x2) + Math.abs(y2) + Math.abs(r), 1);
-            MovePower((y2 + x2 + r) / d, (y2 - x2 - r) / d,
-                      (y2 - x2 + r) / d, (y2 + x2 - r) / d);
-
-            if (((runtime.seconds() >= timeOut) && (timeOut != 0)) ||
-                ((colors.blue() >= 6000 || colors.red() >= 3700) && colors.green() <= 3500)) break;
-        }
-        Break(stopSecond);
     }
 
     public void Turn(double degs, double stopSecond) {
@@ -228,12 +205,9 @@ public abstract class Robot extends LinearOpMode {
                 RevHubOrientationOnRobot.LogoFacingDirection.BACKWARD,
                 RevHubOrientationOnRobot.UsbFacingDirection .RIGHT)));
 
-        // Initialize Color Sensor
-        colors = hardwareMap.get(ColorSensor.class, "sensor_color");
-
         // Reverse Servo
         RA .setDirection(Servo.Direction.REVERSE);
-        RH .setDirection(Servo.Direction.REVERSE);
+        LH .setDirection(Servo.Direction.REVERSE);
         ALL.setDirection(Servo.Direction.REVERSE);
         ADP.setDirection(Servo.Direction.REVERSE);
         // Set Servo Position
